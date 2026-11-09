@@ -1,0 +1,39 @@
+{
+  "id": "/",
+  "name": "NAKEIC - Conecta Sin Límites",
+  "short_name": "NAKEIC",
+  "description": "Mensajería privada nativa con llamadas WebRTC, estados temporales y cifrado E2EE.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0B132B",
+  "background_color": "#0B132B",
+  "categories": ["communication", "social"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/nakeic_logo.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

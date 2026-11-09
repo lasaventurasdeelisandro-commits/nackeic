@@ -1,0 +1,10 @@
+{
+  "name": "NAKEIC - Mensajería Nativa Android",
+  "description": "Aplicación móvil nativa para Android de mensajería privada, llamadas WebRTC, estados temporales, cifrado y personalización de temas.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "notifications"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

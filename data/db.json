@@ -1,0 +1,1575 @@
+{
+  "users": {
+    "user_ana": {
+      "id": "user_ana",
+      "phoneNumber": "+52 55 1234 5678",
+      "displayName": "Ana Morales",
+      "username": "anamorales",
+      "bio": "Ingeniera de Criptografía 🔐 · NAKEIC Dev",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      "isOnline": false,
+      "lastSeen": 1794182625216,
+      "createdAt": 1794059338224,
+      "blockedUserIds": []
+    },
+    "user_carlos": {
+      "id": "user_carlos",
+      "phoneNumber": "+34 612 345 678",
+      "displayName": "Carlos Silva",
+      "username": "csilva_ops",
+      "bio": "WebRTC & Audio Pipelines · Conectando al mundo",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+      "isOnline": true,
+      "lastSeen": 1794069338224,
+      "createdAt": 1794059338224
+    },
+    "user_elena": {
+      "id": "user_elena",
+      "phoneNumber": "+1 415 892 1100",
+      "displayName": "Elena Rostova",
+      "username": "erostova",
+      "bio": "Diseño UX/UI Nativo Android Material 3 ✨",
+      "avatarUrl": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80",
+      "isOnline": false,
+      "lastSeen": 1794065738224,
+      "createdAt": 1794059338224
+    },
+    "user_me": {
+      "id": "user_me",
+      "phoneNumber": "+52 55 8923 4410",
+      "displayName": "Alex Valenzuela",
+      "username": "alexv_nakeic",
+      "bio": "Conectado con NAKEIC 🚀",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      "isOnline": true,
+      "lastSeen": 1794238788127,
+      "createdAt": 1794059338224
+    },
+    "user_1794183256593_1k39": {
+      "id": "user_1794183256593_1k39",
+      "phoneNumber": "+52 55 1001 0001",
+      "displayName": "Usuario A (Alicia)",
+      "username": "alicia_nakeic",
+      "bio": "Probando NAKEIC E2EE",
+      "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+      "isOnline": true,
+      "lastSeen": 1794238789415,
+      "createdAt": 1794183256593
+    },
+    "user_1794183256639_nq4m": {
+      "id": "user_1794183256639_nq4m",
+      "phoneNumber": "+52 55 2002 0002",
+      "displayName": "Usuario B (Beto)",
+      "username": "beto_nakeic",
+      "bio": "Conectado a NAKEIC",
+      "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256639_nq4m",
+      "isOnline": false,
+      "lastSeen": 1794238792590,
+      "createdAt": 1794183256639
+    },
+    "user_alicia": {
+      "id": "user_alicia",
+      "phoneNumber": "+52 55 8923 4410",
+      "displayName": "Alex Valenzuela",
+      "username": "alexv_nakeic",
+      "bio": "Conectado con NAKEIC 🚀",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+      "isOnline": false,
+      "lastSeen": 1794238793527,
+      "createdAt": 1794183256956
+    },
+    "user_bot": {
+      "id": "user_bot",
+      "phoneNumber": "+00 00 0000 0000",
+      "displayName": "NAKEIC Bot 🤖",
+      "username": "nakeicbot",
+      "bio": "Asistente oficial inteligente de NAKEIC",
+      "avatarUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80",
+      "isOnline": true,
+      "lastSeen": 1794235876736,
+      "createdAt": 1794235876736
+    },
+    "user_1794235988233_3dr0": {
+      "id": "user_1794235988233_3dr0",
+      "phoneNumber": "+525577889900",
+      "displayName": "Usuario OTP Verificado",
+      "username": "usuario_otp_verifica",
+      "bio": "Conectado de forma segura con NAKEIC 🚀",
+      "avatarUrl": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794235988233_3dr0",
+      "isOnline": true,
+      "lastSeen": 1794238792608,
+      "createdAt": 1794235988233
+    }
+  },
+  "conversations": {
+    "conv_saved_messages": {
+      "id": "conv_saved_messages",
+      "type": "direct",
+      "title": "Mensajes Guardados (Nube)",
+      "avatarUrl": "https://images.unsplash.com/photo-1534972195531-a756b1126f25?w=200&auto=format&fit=crop&q=80",
+      "participantIds": [
+        "user_me"
+      ],
+      "unreadCounts": {
+        "user_me": 0
+      },
+      "lastMessageText": "Para reaccionar",
+      "lastMessageTime": 1794069404081,
+      "isPinned": true,
+      "isSavedMessages": true,
+      "createdAt": 1794059338224
+    },
+    "conv_business_store": {
+      "id": "conv_business_store",
+      "type": "direct",
+      "title": "NAKEIC Store Oficial",
+      "avatarUrl": "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=200&auto=format&fit=crop&q=80",
+      "participantIds": [
+        "user_me",
+        "business_store"
+      ],
+      "unreadCounts": {
+        "user_me": 1
+      },
+      "lastMessageText": "🌟 Producto Destacado: NAKEIC Titan Security Phone ($799 USD)",
+      "lastMessageTime": 1794058538224,
+      "isPinned": true,
+      "isBusiness": true,
+      "label": "vip",
+      "createdAt": 1794059338224
+    },
+    "conv_telegram_channel": {
+      "id": "conv_telegram_channel",
+      "type": "group",
+      "title": "NAKEIC Oficial 📢",
+      "avatarUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80",
+      "participantIds": [
+        "user_me",
+        "user_ana",
+        "user_carlos"
+      ],
+      "unreadCounts": {},
+      "lastMessageText": "🚀 Actualización NAKEIC v2.6.0 ya disponible con WhatsApp Business y Telegram",
+      "lastMessageTime": 1794065738224,
+      "isPinned": false,
+      "isChannel": true,
+      "channelSubscribers": 14820,
+      "createdAt": 1794059338224
+    },
+    "conv_ana_carlos": {
+      "id": "conv_ana_carlos",
+      "type": "direct",
+      "title": "Ana Morales",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      "participantIds": [
+        "user_me",
+        "user_ana",
+        "user_carlos"
+      ],
+      "unreadCounts": {
+        "user_ana": 3,
+        "user_carlos": 3
+      },
+      "lastMessageText": "Este mensaje fue eliminado.",
+      "lastMessageTime": 1794182624309,
+      "isPinned": true,
+      "createdAt": 1794068338224
+    },
+    "conv_group_general": {
+      "id": "conv_group_general",
+      "type": "group",
+      "title": "Comunidad NAKEIC Global 🌐",
+      "avatarUrl": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300&auto=format&fit=crop&q=80",
+      "participantIds": [
+        "user_me",
+        "user_ana",
+        "user_carlos",
+        "user_elena",
+        "user_1794183256593_1k39",
+        "user_1794183256639_nq4m",
+        "user_1794235988233_3dr0"
+      ],
+      "unreadCounts": {},
+      "lastMessageText": "Prueba de envío programado automatizado",
+      "lastMessageTime": 1794238507465,
+      "isPinned": false,
+      "createdAt": 1794067338224,
+      "disappearingDurationSeconds": 60
+    },
+    "conv_alicia_beto": {
+      "id": "conv_alicia_beto",
+      "type": "direct",
+      "title": "alicia beto",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      "participantIds": [
+        "user_alicia",
+        "user_1794183256639_nq4m",
+        "user_1794183256593_1k39"
+      ],
+      "unreadCounts": {
+        "user_1794183256639_nq4m": 1,
+        "user_1794183256593_1k39": 6
+      },
+      "lastMessageText": "Mensaje de prueba paginación 4 - 1794238792939",
+      "lastMessageTime": 1794238792942,
+      "isPinned": false,
+      "createdAt": 1794183256956
+    },
+    "comm_1794235876713": {
+      "id": "comm_1794235876713",
+      "type": "group",
+      "title": "Comunidad Cripto NAKEIC",
+      "avatarUrl": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=200&auto=format&fit=crop&q=80",
+      "participantIds": [],
+      "unreadCounts": {},
+      "isPinned": false,
+      "adminIds": [],
+      "isCommunity": true,
+      "topics": [
+        {
+          "id": "topic_general",
+          "title": "💬 General",
+          "icon": "💬",
+          "messageCount": 0,
+          "createdAt": 1794235876713
+        },
+        {
+          "id": "topic_anuncios",
+          "title": "📢 Anuncios Oficiales",
+          "icon": "📢",
+          "messageCount": 0,
+          "createdAt": 1794235876713
+        }
+      ],
+      "createdAt": 1794235876713
+    }
+  },
+  "messages": {
+    "conv_saved_messages": [
+      {
+        "id": "sm1",
+        "conversationId": "conv_saved_messages",
+        "senderId": "user_me",
+        "senderName": "Tú (Mensajes Guardados)",
+        "senderAvatar": "https://images.unsplash.com/photo-1534972195531-a756b1126f25?w=200&auto=format&fit=crop&q=80",
+        "text": "📌 Nota personal: Presentación de arquitectura NAKEIC vs WhatsApp/Telegram a las 4:00 PM.",
+        "type": "text",
+        "status": "read",
+        "timestamp": 1794051338224,
+        "isPinned": false
+      },
+      {
+        "id": "sm2",
+        "conversationId": "conv_saved_messages",
+        "senderId": "user_me",
+        "senderName": "Tú (Mensajes Guardados)",
+        "senderAvatar": "https://images.unsplash.com/photo-1534972195531-a756b1126f25?w=200&auto=format&fit=crop&q=80",
+        "text": "Enlace del repositorio y documentación de cifrado: https://github.com/nakeic/android-native-app",
+        "type": "text",
+        "status": "read",
+        "timestamp": 1794062138224,
+        "isPinned": false
+      },
+      {
+        "id": "test_msg_1794069374860",
+        "conversationId": "conv_saved_messages",
+        "senderId": "user_me",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Mensaje de prueba automatizado NAKEIC 🧪",
+        "type": "text",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794069374862,
+        "isPinned": false
+      },
+      {
+        "id": "test_msg_1794069392435",
+        "conversationId": "conv_saved_messages",
+        "senderId": "user_me",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Mensaje de prueba automatizado NAKEIC 🧪",
+        "type": "text",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794069392435,
+        "isPinned": false
+      },
+      {
+        "id": "del_test_1794069398514",
+        "conversationId": "conv_saved_messages",
+        "senderId": "user_me",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Este mensaje fue eliminado.",
+        "type": "text",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794069398622,
+        "isDeletedForEveryone": true,
+        "isPinned": false
+      },
+      {
+        "id": "react_test_1794069403969",
+        "conversationId": "conv_saved_messages",
+        "senderId": "user_me",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Para reaccionar",
+        "type": "text",
+        "status": "sent",
+        "reactions": {
+          "❤️": [
+            "user_me"
+          ]
+        },
+        "timestamp": 1794069404081,
+        "isPinned": false
+      }
+    ],
+    "conv_business_store": [
+      {
+        "id": "bs1",
+        "conversationId": "conv_business_store",
+        "senderId": "business_store",
+        "senderName": "NAKEIC Store Oficial",
+        "senderAvatar": "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=200&auto=format&fit=crop&q=80",
+        "text": "¡Hola Alex! Bienvenido a la tienda oficial de NAKEIC. Aquí puedes explorar terminales de seguridad, accesorios y servicios exclusivos con soporte 24/7.",
+        "type": "text",
+        "status": "read",
+        "timestamp": 1794047738224
+      },
+      {
+        "id": "bs2",
+        "conversationId": "conv_business_store",
+        "senderId": "business_store",
+        "senderName": "NAKEIC Store Oficial",
+        "senderAvatar": "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=200&auto=format&fit=crop&q=80",
+        "text": "🌟 Producto Destacado del Catálogo:",
+        "type": "text",
+        "status": "read",
+        "timestamp": 1794058538224,
+        "productCard": {
+          "id": "prod_1",
+          "title": "NAKEIC Titan Security Phone",
+          "price": "$799 USD",
+          "description": "Smartphone con chip de seguridad dedicado, OS sin rastreo y cifrado en hardware.",
+          "imageUrl": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&auto=format&fit=crop&q=80"
+        }
+      }
+    ],
+    "conv_telegram_channel": [
+      {
+        "id": "tc1",
+        "conversationId": "conv_telegram_channel",
+        "senderId": "channel_bot",
+        "senderName": "NAKEIC Oficial 📢",
+        "senderAvatar": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80",
+        "text": "🚀 Actualización NAKEIC v2.6.0 ya disponible:\n\n• Nuevas Carpetas de Chats estilo Telegram\n• Hub Empresarial & Catálogo WhatsApp Business\n• Mensajes Guardados en Nube Personal\n• Respuestas Rápidas con atajo /\n• Envío Silencioso y Programado",
+        "type": "text",
+        "status": "read",
+        "timestamp": 1794065738224,
+        "viewsCount": 14820
+      }
+    ],
+    "conv_ana_carlos": [
+      {
+        "id": "msg_1",
+        "conversationId": "conv_ana_carlos",
+        "senderId": "user_ana",
+        "senderName": "Ana Morales",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "¡Hola! Todos los mensajes y llamadas ahora viajan por la infraestructura real de NAKEIC con cifrado E2EE.",
+        "type": "text",
+        "status": "read",
+        "timestamp": 1794069038224
+      },
+      {
+        "id": "msg_2",
+        "conversationId": "conv_ana_carlos",
+        "senderId": "user_carlos",
+        "senderName": "Carlos Silva",
+        "senderAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+        "text": "¡Excelente! Podemos probar videollamadas WebRTC de alta definición y enviar notas de voz reales.",
+        "type": "text",
+        "status": "read",
+        "timestamp": 1794069158224
+      },
+      {
+        "id": "test_msg_1794179951818",
+        "conversationId": "conv_ana_carlos",
+        "senderId": "user_me",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Este mensaje fue eliminado.",
+        "type": "text",
+        "status": "sent",
+        "reactions": {
+          "🔥": [
+            "user_me"
+          ]
+        },
+        "timestamp": 1794179951819,
+        "isDeletedForEveryone": true
+      },
+      {
+        "id": "poll_1794179952619",
+        "conversationId": "conv_ana_carlos",
+        "senderId": "user_me",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "¿Qué función prefieres de NAKEIC?",
+        "type": "poll",
+        "poll": {
+          "question": "¿Qué función prefieres de NAKEIC?",
+          "allowsMultipleAnswers": false,
+          "options": [
+            {
+              "id": "opt_1",
+              "text": "WhatsApp Business (Catálogo + Etiquetas)",
+              "votes": [
+                "user_ana"
+              ]
+            },
+            {
+              "id": "opt_2",
+              "text": "Telegram (Canales + Carpetas + Silencioso)",
+              "votes": []
+            }
+          ]
+        },
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794179952619
+      },
+      {
+        "id": "msg_rest_1794182623845",
+        "conversationId": "conv_ana_carlos",
+        "senderId": "user_me",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Mensaje de prueba vía ChatRepositoryImpl REST",
+        "type": "text",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794182623966
+      },
+      {
+        "id": "ws_1794182624309",
+        "conversationId": "conv_ana_carlos",
+        "senderId": "user_me",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Este mensaje fue eliminado.",
+        "type": "text",
+        "status": "sent",
+        "reactions": {
+          "👍": [
+            "user_me"
+          ]
+        },
+        "timestamp": 1794182624309,
+        "isDeletedForEveryone": true
+      }
+    ],
+    "conv_group_general": [
+      {
+        "id": "msg_grp_1",
+        "conversationId": "conv_group_general",
+        "senderId": "user_ana",
+        "senderName": "Ana Morales",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "📢 Bienvenidos al canal masivo de NAKEIC. Cualquier usuario registrado puede comunicarse y llamar en grupo aquí.",
+        "type": "text",
+        "status": "read",
+        "timestamp": 1794068738224
+      },
+      {
+        "id": "msg_1794235876735_7xrik",
+        "conversationId": "conv_group_general",
+        "senderId": "user_1794235853653_9fib",
+        "senderName": "Rodrigo Ramos",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794235853653_9fib",
+        "text": "/crypto",
+        "type": "text",
+        "status": "delivered",
+        "reactions": {},
+        "timestamp": 1794235876735
+      },
+      {
+        "id": "bot_1794235876736_xdyr",
+        "conversationId": "conv_group_general",
+        "senderId": "user_bot",
+        "senderName": "NAKEIC Bot 🤖",
+        "senderAvatar": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80",
+        "text": "🔐 **Auditoría Criptográfica NAKEIC:**\n• Curva: ECDH P-256 (secp256r1)\n• Derivación: HKDF RFC 5869 (HMAC-SHA256)\n• Algoritmo: AES-256-GCM (128-bit Tag)\n• Almacenamiento: Android KeyStore (TEE / StrongBox)\n• Estado: Activo y Protegido.",
+        "type": "text",
+        "status": "read",
+        "timestamp": 1794235876836
+      },
+      {
+        "id": "msg_1794235884951_rtcm4",
+        "conversationId": "conv_group_general",
+        "senderId": "user_1794235853653_9fib",
+        "senderName": "Rodrigo Ramos",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794235853653_9fib",
+        "text": "Este mensaje temporal ha expirado.",
+        "type": "text",
+        "status": "delivered",
+        "reactions": {},
+        "disappearingAfterTimestamp": 1794235886952,
+        "timestamp": 1794235884952,
+        "isDeletedForEveryone": true
+      },
+      {
+        "id": "sched_1794235909985_phsn",
+        "conversationId": "conv_group_general",
+        "senderId": "user_1794235853653_9fib",
+        "senderName": "Rodrigo Ramos",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794235853653_9fib",
+        "text": "Mensaje programado entregado puntualmente ⏰",
+        "type": "text",
+        "status": "delivered",
+        "isScheduled": false,
+        "scheduledTime": 1794235913967,
+        "timestamp": 1794235915006
+      },
+      {
+        "id": "sched_1794235988248_x3fr",
+        "conversationId": "conv_group_general",
+        "senderId": "user_ana",
+        "senderName": "Ana Morales",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Prueba de envío programado automatizado",
+        "type": "text",
+        "status": "delivered",
+        "isScheduled": false,
+        "scheduledTime": 1794235990247,
+        "timestamp": 1794236345714
+      },
+      {
+        "id": "sched_1794237054355_2otz",
+        "conversationId": "conv_group_general",
+        "senderId": "user_ana",
+        "senderName": "Ana Morales",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Prueba de envío programado automatizado",
+        "type": "text",
+        "status": "delivered",
+        "isScheduled": false,
+        "scheduledTime": 1794237056353,
+        "timestamp": 1794237060823
+      },
+      {
+        "id": "sched_1794237073570_v8yf",
+        "conversationId": "conv_group_general",
+        "senderId": "user_ana",
+        "senderName": "Ana Morales",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Prueba de envío programado automatizado",
+        "type": "text",
+        "status": "delivered",
+        "isScheduled": false,
+        "scheduledTime": 1794237075567,
+        "timestamp": 1794237080513
+      },
+      {
+        "id": "sched_1794237109913_w6gm",
+        "conversationId": "conv_group_general",
+        "senderId": "user_ana",
+        "senderName": "Ana Morales",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Prueba de envío programado automatizado",
+        "type": "text",
+        "status": "delivered",
+        "isScheduled": false,
+        "scheduledTime": 1794237111911,
+        "timestamp": 1794238507465
+      },
+      {
+        "id": "sched_1794238793066_shwt",
+        "conversationId": "conv_group_general",
+        "senderId": "user_ana",
+        "senderName": "Ana Morales",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+        "text": "Prueba de envío programado automatizado",
+        "type": "text",
+        "status": "sent",
+        "isScheduled": true,
+        "scheduledTime": 1794238795063,
+        "timestamp": 1794238793066
+      }
+    ],
+    "conv_alicia_beto": [
+      {
+        "id": "msg_test_1794183256642",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Hola Beto, mensaje de prueba en tiempo real",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183256956
+      },
+      {
+        "id": "offline_1794183257759",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Mensaje enviado mientras estabas desconectado",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183258061
+      },
+      {
+        "id": "msg_1794183258974_mt1yc",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Fotografía adjunta",
+        "type": "image",
+        "mediaUrl": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183258975
+      },
+      {
+        "id": "msg_1794183258980_p9ik0",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Video HD adjunto",
+        "type": "video",
+        "mediaUrl": "https://sample-videos.com/video123.mp4",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183258980
+      },
+      {
+        "id": "msg_1794183258985_qqil2",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Documento PDF",
+        "type": "file",
+        "fileName": "informe_seguridad.pdf",
+        "fileSize": "2.4 MB",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183258985
+      },
+      {
+        "id": "msg_1794183258989_ao1de",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Nota de voz",
+        "type": "voice",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183258989
+      },
+      {
+        "id": "msg_test_1794183327565",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Hola Beto, mensaje de prueba en tiempo real",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183327878
+      },
+      {
+        "id": "offline_1794183328680",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Mensaje enviado mientras estabas desconectado",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183328981
+      },
+      {
+        "id": "msg_1794183329896_w0hmr",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Fotografía adjunta",
+        "type": "image",
+        "mediaUrl": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183329896
+      },
+      {
+        "id": "msg_1794183329901_smww8",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Video HD adjunto",
+        "type": "video",
+        "mediaUrl": "https://sample-videos.com/video123.mp4",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183329901
+      },
+      {
+        "id": "msg_1794183329904_0kex9",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Documento PDF",
+        "type": "file",
+        "fileName": "informe_seguridad.pdf",
+        "fileSize": "2.4 MB",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183329904
+      },
+      {
+        "id": "msg_1794183329908_8v7hz",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Nota de voz",
+        "type": "voice",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183329908
+      },
+      {
+        "id": "msg_test_1794183792906",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Hola Beto, mensaje de prueba en tiempo real",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183793220
+      },
+      {
+        "id": "offline_1794183794023",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Mensaje enviado mientras estabas desconectado",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183794325
+      },
+      {
+        "id": "msg_1794183795239_5v8id",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Fotografía adjunta",
+        "type": "image",
+        "mediaUrl": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183795239
+      },
+      {
+        "id": "msg_1794183795242_j724c",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Video HD adjunto",
+        "type": "video",
+        "mediaUrl": "https://sample-videos.com/video123.mp4",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183795242
+      },
+      {
+        "id": "msg_1794183795246_tmj2o",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Documento PDF",
+        "type": "file",
+        "fileName": "informe_seguridad.pdf",
+        "fileSize": "2.4 MB",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183795246
+      },
+      {
+        "id": "msg_1794183795250_6sotr",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Nota de voz",
+        "type": "voice",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794183795250
+      },
+      {
+        "id": "msg_test_1794235931403",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Hola Beto, mensaje de prueba en tiempo real",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235931716
+      },
+      {
+        "id": "offline_1794235932519",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Mensaje enviado mientras estabas desconectado",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235932821
+      },
+      {
+        "id": "msg_1794235933734_prq8f",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Fotografía adjunta",
+        "type": "image",
+        "mediaUrl": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235933734
+      },
+      {
+        "id": "msg_1794235933739_nnrek",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Video HD adjunto",
+        "type": "video",
+        "mediaUrl": "https://sample-videos.com/video123.mp4",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235933739
+      },
+      {
+        "id": "msg_1794235933744_08axk",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Documento PDF",
+        "type": "file",
+        "fileName": "informe_seguridad.pdf",
+        "fileSize": "2.4 MB",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235933744
+      },
+      {
+        "id": "msg_1794235933747_7bm11",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Nota de voz",
+        "type": "voice",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235933747
+      },
+      {
+        "id": "msg_test_1794235985078",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Hola Beto, mensaje de prueba en tiempo real",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235985390
+      },
+      {
+        "id": "offline_1794235986192",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Mensaje enviado mientras estabas desconectado",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235986494
+      },
+      {
+        "id": "msg_1794235987406_l94w5",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Fotografía adjunta",
+        "type": "image",
+        "mediaUrl": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235987406
+      },
+      {
+        "id": "msg_1794235987411_82axv",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Video HD adjunto",
+        "type": "video",
+        "mediaUrl": "https://sample-videos.com/video123.mp4",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235987411
+      },
+      {
+        "id": "msg_1794235987414_j6tgf",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Documento PDF",
+        "type": "file",
+        "fileName": "informe_seguridad.pdf",
+        "fileSize": "2.4 MB",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235987414
+      },
+      {
+        "id": "msg_1794235987418_iij34",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Nota de voz",
+        "type": "voice",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794235987418
+      },
+      {
+        "id": "msg_test_1794237050740",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Hola Beto, mensaje de prueba en tiempo real",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237051058
+      },
+      {
+        "id": "offline_1794237051859",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Mensaje enviado mientras estabas desconectado",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237052161
+      },
+      {
+        "id": "msg_1794237053079_ste3o",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Fotografía adjunta",
+        "type": "image",
+        "mediaUrl": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237053079
+      },
+      {
+        "id": "msg_1794237053085_qg49w",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Video HD adjunto",
+        "type": "video",
+        "mediaUrl": "https://sample-videos.com/video123.mp4",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237053085
+      },
+      {
+        "id": "msg_1794237053090_9zxhy",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Documento PDF",
+        "type": "file",
+        "fileName": "informe_seguridad.pdf",
+        "fileSize": "2.4 MB",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237053090
+      },
+      {
+        "id": "msg_1794237053097_q97fh",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Nota de voz",
+        "type": "voice",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237053097
+      },
+      {
+        "id": "msg_1794237053919_srnjq",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 1 - 1794237053916",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237053919
+      },
+      {
+        "id": "msg_1794237054023_kzoo2",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 2 - 1794237054020",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237054023
+      },
+      {
+        "id": "msg_1794237054129_2iu9f",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 3 - 1794237054126",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237054129
+      },
+      {
+        "id": "msg_1794237054235_0lakf",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 4 - 1794237054231",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237054235
+      },
+      {
+        "id": "msg_test_1794237069946",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Hola Beto, mensaje de prueba en tiempo real",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237070261
+      },
+      {
+        "id": "offline_1794237071063",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Mensaje enviado mientras estabas desconectado",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237071366
+      },
+      {
+        "id": "msg_1794237072281_ttcsy",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Fotografía adjunta",
+        "type": "image",
+        "mediaUrl": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237072281
+      },
+      {
+        "id": "msg_1794237072286_r9rp6",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Video HD adjunto",
+        "type": "video",
+        "mediaUrl": "https://sample-videos.com/video123.mp4",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237072286
+      },
+      {
+        "id": "msg_1794237072290_322lw",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Documento PDF",
+        "type": "file",
+        "fileName": "informe_seguridad.pdf",
+        "fileSize": "2.4 MB",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237072290
+      },
+      {
+        "id": "msg_1794237072295_5e3ob",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Nota de voz",
+        "type": "voice",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237072295
+      },
+      {
+        "id": "msg_1794237073131_tc05y",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 1 - 1794237073128",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237073131
+      },
+      {
+        "id": "msg_1794237073236_x7kvm",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 2 - 1794237073232",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237073236
+      },
+      {
+        "id": "msg_1794237073341_v98kd",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 3 - 1794237073338",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237073341
+      },
+      {
+        "id": "msg_1794237073447_cdre2",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 4 - 1794237073444",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237073447
+      },
+      {
+        "id": "msg_test_1794237106241",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Hola Beto, mensaje de prueba en tiempo real",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237106559
+      },
+      {
+        "id": "offline_1794237107362",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Mensaje enviado mientras estabas desconectado",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237107665
+      },
+      {
+        "id": "msg_1794237108585_xgwj2",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Fotografía adjunta",
+        "type": "image",
+        "mediaUrl": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237108585
+      },
+      {
+        "id": "msg_1794237108591_uinxb",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Video HD adjunto",
+        "type": "video",
+        "mediaUrl": "https://sample-videos.com/video123.mp4",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237108591
+      },
+      {
+        "id": "msg_1794237108597_dyrps",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Documento PDF",
+        "type": "file",
+        "fileName": "informe_seguridad.pdf",
+        "fileSize": "2.4 MB",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237108598
+      },
+      {
+        "id": "msg_1794237108605_1tuxm",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Nota de voz",
+        "type": "voice",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237108605
+      },
+      {
+        "id": "msg_1794237109463_ma5vq",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 1 - 1794237109460",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237109463
+      },
+      {
+        "id": "msg_1794237109569_b8vnl",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 2 - 1794237109566",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237109569
+      },
+      {
+        "id": "msg_1794237109675_wu550",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 3 - 1794237109671",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237109675
+      },
+      {
+        "id": "msg_1794237109781_m50lo",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 4 - 1794237109777",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794237109781
+      },
+      {
+        "id": "msg_test_1794238789427",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Hola Beto, mensaje de prueba en tiempo real",
+        "type": "text",
+        "status": "read",
+        "reactions": {},
+        "timestamp": 1794238789739
+      },
+      {
+        "id": "offline_1794238790540",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Mensaje enviado mientras estabas desconectado",
+        "type": "text",
+        "status": "delivered",
+        "reactions": {},
+        "timestamp": 1794238790842
+      },
+      {
+        "id": "msg_1794238791760_q8aae",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Fotografía adjunta",
+        "type": "image",
+        "mediaUrl": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794238791760
+      },
+      {
+        "id": "msg_1794238791765_qnvq5",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Video HD adjunto",
+        "type": "video",
+        "mediaUrl": "https://sample-videos.com/video123.mp4",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794238791765
+      },
+      {
+        "id": "msg_1794238791770_jafe6",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Documento PDF",
+        "type": "file",
+        "fileName": "informe_seguridad.pdf",
+        "fileSize": "2.4 MB",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794238791770
+      },
+      {
+        "id": "msg_1794238791776_qddp8",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_alicia",
+        "senderName": "Alex Valenzuela",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        "text": "Nota de voz",
+        "type": "voice",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794238791776
+      },
+      {
+        "id": "msg_1794238792621_5ppz4",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 1 - 1794238792619",
+        "type": "text",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794238792622
+      },
+      {
+        "id": "msg_1794238792730_5qbkb",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 2 - 1794238792726",
+        "type": "text",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794238792730
+      },
+      {
+        "id": "msg_1794238792836_b61x5",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 3 - 1794238792833",
+        "type": "text",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794238792836
+      },
+      {
+        "id": "msg_1794238792942_grq6p",
+        "conversationId": "conv_alicia_beto",
+        "senderId": "user_1794183256593_1k39",
+        "senderName": "Usuario A (Alicia)",
+        "senderAvatar": "https://api.dicebear.com/7.x/bottts/svg?seed=user_1794183256593_1k39",
+        "text": "Mensaje de prueba paginación 4 - 1794238792939",
+        "type": "text",
+        "status": "sent",
+        "reactions": {},
+        "timestamp": 1794238792942
+      }
+    ]
+  },
+  "statuses": [
+    {
+      "id": "st_1794179954323_orvm",
+      "userId": "user_me",
+      "userName": "Alex Valenzuela",
+      "userAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      "textCaption": "Probando actualización de estado NAKEIC 24h",
+      "bgHex": "#0077B6",
+      "timestamp": 1794179954323
+    },
+    {
+      "id": "st_1",
+      "userId": "user_ana",
+      "userName": "Ana Morales",
+      "userAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      "textCaption": "NAKEIC nativo en producción activa 🚀 Cifrado E2EE al 100%",
+      "bgHex": "#0077B6",
+      "timestamp": 1794067538224
+    },
+    {
+      "id": "st_2",
+      "userId": "user_carlos",
+      "userName": "Carlos Silva",
+      "userAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+      "mediaUrl": "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=80",
+      "textCaption": "Probando audio WebRTC Opus en tiempo real",
+      "timestamp": 1794065738224
+    }
+  ],
+  "sessions": {
+    "user_1794183256593_1k39": [
+      {
+        "id": "sess_b35705e16cb71ca4c7d43f57ccbc79b6",
+        "userId": "user_1794183256593_1k39",
+        "token": "nkc_sec_2d0005c852fe77c7dac88c28694a62c7c2f065c6079079d72294986178d83fb6",
+        "deviceName": "NAKEIC Client",
+        "platform": "Android / Web",
+        "ip": "127.0.0.1",
+        "createdAt": 1794238789400,
+        "lastActive": 1794238789400,
+        "expiresAt": 1796830789400
+      },
+      {
+        "id": "sess_87e33683dac489db315ac46b0c5c4a0c",
+        "userId": "user_1794183256593_1k39",
+        "token": "nkc_sec_81f36609746b962a8c978b8d301723d1f734bb21f26942c7cbecc7d7d2e5e872",
+        "deviceName": "NAKEIC Client",
+        "platform": "Android / Web",
+        "ip": "127.0.0.1",
+        "createdAt": 1794238789416,
+        "lastActive": 1794238789416,
+        "expiresAt": 1796830789416
+      }
+    ],
+    "user_1794183256639_nq4m": [
+      {
+        "id": "sess_728393a3a91388b665f97ee286bd64b3",
+        "userId": "user_1794183256639_nq4m",
+        "token": "nkc_sec_48a05010ddd0def8553d2ea7888c494f7a8beb0e9d4cca44f14d39666c2162c8",
+        "deviceName": "NAKEIC Client",
+        "platform": "Android / Web",
+        "ip": "127.0.0.1",
+        "createdAt": 1794238789420,
+        "lastActive": 1794238789420,
+        "expiresAt": 1796830789420
+      },
+      {
+        "id": "sess_4b89953409a3bc2ee79dbd4d0fbaa88f",
+        "userId": "user_1794183256639_nq4m",
+        "token": "nkc_sec_2e6abcfa8388a44abedab2fac722f37e1edbeb74a770493ec3ce6d4349d456a3",
+        "deviceName": "NAKEIC Client",
+        "platform": "Android / Web",
+        "ip": "127.0.0.1",
+        "createdAt": 1794238789425,
+        "lastActive": 1794238789425,
+        "expiresAt": 1796830789425
+      }
+    ],
+    "user_1794235988233_3dr0": [
+      {
+        "id": "sess_e66527a944f496a019c6093bd22258ae",
+        "userId": "user_1794235988233_3dr0",
+        "token": "nkc_sec_89861f597f614c4f75a2161b4a7c84c87c305d259ad5c0e214c7ff5578f66e83",
+        "deviceName": "Android Pixel 8 Test",
+        "platform": "Android / Web Native",
+        "ip": "127.0.0.1",
+        "createdAt": 1794238792608,
+        "lastActive": 1794238792608,
+        "expiresAt": 1796830792608
+      }
+    ]
+  }
+}

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/pwa-512x512.png" />
+    <link rel="icon" type="image/jpeg" href="/nakeic_logo.jpg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <title>NAKEIC - Conecta Sin Límites</title>
+    <meta name="description" content="NAKEIC - Conecta Sin Límites. Aplicación móvil nativa para Android de mensajería privada, llamadas WebRTC, estados temporales, cifrado y personalización de temas." />
+    
+    <!-- Android & WebAPK / PWA Meta -->
+    <meta name="theme-color" content="#0B132B" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- iOS WebApp Meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="NAKEIC" />
+    
+    <!-- Social & OpenGraph -->
+    <meta property="og:title" content="NAKEIC - Conecta Sin Límites" />
+    <meta property="og:description" content="NAKEIC - Conecta Sin Límites. Aplicación móvil nativa para Android de mensajería privada, llamadas WebRTC, estados temporales, cifrado y personalización de temas." />
+    <meta property="og:image" content="/nakeic_logo.jpg" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').then(function(reg) {
+            console.log('[NAKEIC] Service Worker registered:', reg.scope);
+          }).catch(function(err) {
+            console.log('[NAKEIC] Service Worker registration failed:', err);
+          });
+        });
+      }
+    </script>
+  </head>
+  <body class="bg-slate-950 select-none overscroll-none">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
