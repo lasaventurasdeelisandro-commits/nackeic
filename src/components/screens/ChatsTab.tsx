@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -24,19 +24,23 @@ import {
   Radio,
   Tag,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Video
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Conversation, ChatLabelType } from '../../types';
 import { BUSINESS_LABELS } from '../../data/mockData';
 import { BusinessHubModal } from '../modals/BusinessHubModal';
+import { LiveFeedView } from '../live/LiveFeedView';
+import { liveService } from '../../services/liveService';
 
-type ChatFolder = 'all' | 'unread' | 'business' | 'groups' | 'channels' | 'saved' | 'vip' | 'archived';
+type ChatFolder = 'all' | 'unread' | 'business' | 'groups' | 'live' | 'channels' | 'saved' | 'vip' | 'archived';
 
 export const ChatsTab: React.FC = () => {
   const {
     conversations,
     theme,
+    currentUser,
     setActiveConversationId,
     setIsNewChatModalOpen,
     setIsNewGroupModalOpen,
@@ -49,12 +53,73 @@ export const ChatsTab: React.FC = () => {
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [globalMsgResults, setGlobalMsgResults] = useState<Array<{
+    conversationId: string;
+    conversationTitle: string;
+    message: { id: string; senderName: string; text: string; timestamp: number };
+  }>>([]);
+  const [requestedRoomId, setRequestedRoomId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<ChatFolder>('all');
   const [selectedConvMenu, setSelectedConvMenu] = useState<Conversation | null>(null);
   const [confirmDeleteConv, setConfirmDeleteConv] = useState<Conversation | null>(null);
   const [confirmClearConv, setConfirmClearConv] = useState<Conversation | null>(null);
   const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
+  const [liveCount, setLiveCount] = useState<number>(0);
   const isDark = theme.mode === 'dark' || (theme.mode === 'system' && true);
+
+  useEffect(() => {
+    const onOpenLive = (e: Event) => {
+      const custom = e as CustomEvent<{ roomId?: string }>;
+      setActiveFilter('live');
+      if (custom.detail?.roomId) {
+        setRequestedRoomId(custom.detail.roomId);
+      }
+    };
+    window.addEventListener('nakeic:open_live_room', onOpenLive);
+    return () => window.removeEventListener('nakeic:open_live_room', onOpenLive);
+  }, []);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    const token = localStorage.getItem('nakeic_auth_token');
+    if (q.length < 2 || !token || activeFilter === 'live') {
+      setGlobalMsgResults([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetch(`/api/messages/search?q=${encodeURIComponent(q)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(r => (r.ok ? r.json() : null))
+        .then(d => {
+          if (Array.isArray(d?.results)) {
+            setGlobalMsgResults(d.results.slice(0, 8));
+          }
+        })
+        .catch(() => {});
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery, activeFilter]);
+
+  useEffect(() => {
+    liveService.connect();
+    const unsub = liveService.on('live:rooms_list', (d) => {
+      if (Array.isArray(d?.rooms)) {
+        setLiveCount(d.rooms.length);
+      }
+    });
+    fetch('/api/live/rooms')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (typeof data?.totalActive === 'number') {
+          setLiveCount(data.totalActive);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      unsub();
+    };
+  }, []);
 
   const archivedCount = conversations.filter(c => c.isArchived).length;
   const unreadCount = conversations.filter(c => (c.unreadCount || 0) > 0).length;
@@ -113,65 +178,84 @@ export const ChatsTab: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
-      {/* Search Input Bar with WhatsApp Business Hub Button */}
-      <div className="px-4 py-2.5 flex items-center gap-2">
-        <div
-          className="flex-1 flex items-center gap-2.5 px-3.5 py-2 rounded-2xl text-sm transition-colors border shadow-inner"
-          style={{
-            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0',
-            color: isDark ? '#F8FAFC' : '#0F172A'
-          }}
-        >
-          <Search className="w-4 h-4 text-slate-400 shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar chats, canales y productos..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent border-none outline-none text-xs placeholder:text-slate-500 font-medium"
-          />
+      {/* Search Input Bar with WhatsApp Business Hub Button (hidden when watching TikTok Live feed for full vertical viewport) */}
+      {activeFilter !== 'live' && (
+        <div className="px-4 py-2.5 flex items-center gap-2">
+          <div
+            className="flex-1 flex items-center gap-2.5 px-3.5 py-2 rounded-2xl text-sm transition-colors border shadow-inner"
+            style={{
+              backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
+              borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0',
+              color: isDark ? '#F8FAFC' : '#0F172A'
+            }}
+          >
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar chats, canales y productos..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-xs placeholder:text-slate-500 font-medium"
+            />
+          </div>
+
+          {/* WhatsApp Business Hub & Catalog Trigger Button */}
+          <button
+            onClick={() => setIsBusinessModalOpen(true)}
+            title="Herramientas de Empresa & Catálogo (WhatsApp Business)"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-400 border border-emerald-500/40 text-xs font-black transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
+          >
+            <Briefcase className="w-4 h-4 text-emerald-400" />
+            <span className="hidden sm:inline">Empresa</span>
+          </button>
         </div>
+      )}
 
-        {/* WhatsApp Business Hub & Catalog Trigger Button */}
-        <button
-          onClick={() => setIsBusinessModalOpen(true)}
-          title="Herramientas de Empresa & Catálogo (WhatsApp Business)"
-          className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-400 border border-emerald-500/40 text-xs font-black transition-all cursor-pointer shadow-sm active:scale-95 shrink-0"
-        >
-          <Briefcase className="w-4 h-4 text-emerald-400" />
-          <span className="hidden sm:inline">Empresa</span>
-        </button>
-      </div>
-
-      {/* Telegram-style Chat Folders (Todos, No leídos, Empresas, Grupos, Canales, Guardados, VIP) */}
-      <div className="px-3 pb-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      {/* Telegram-style Chat Folders + NAKEIC Live (Todos, No leídos, Empresas, Grupos, En Vivo, Canales, Guardados, VIP) */}
+      <div className={`px-3 ${activeFilter === 'live' ? 'py-2 border-b border-white/10' : 'pb-2'} flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0`}>
         {[
           { id: 'all', label: 'Todos' },
           { id: 'unread', label: 'No leídos', count: unreadCount },
           { id: 'business', label: 'Empresas 💼', count: businessCount },
           { id: 'groups', label: 'Grupos' },
+          { id: 'live', label: 'En Vivo', count: liveCount, isLiveTab: true },
           { id: 'channels', label: 'Canales 📢' },
           { id: 'saved', label: 'Guardados 🔖' },
           { id: 'vip', label: 'Clientes VIP ⭐' },
           ...(archivedCount > 0 ? [{ id: 'archived', label: `Archivados (${archivedCount})` }] : [])
         ].map(folder => {
           const isActive = activeFilter === folder.id;
+          const isLiveFolder = (folder as { isLiveTab?: boolean }).isLiveTab;
           return (
             <button
               key={folder.id}
-              onClick={() => setActiveFilter(folder.id as any)}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+              onClick={() => setActiveFilter(folder.id as ChatFolder)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 isActive
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20'
+                  ? isLiveFolder
+                    ? 'bg-rose-600 text-white shadow-md shadow-rose-600/25'
+                    : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20'
+                  : isLiveFolder
+                  ? 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30'
                   : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white'
               }`}
             >
+              {isLiveFolder && (
+                liveCount > 0 ? (
+                  <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-white' : 'bg-rose-500'} animate-pulse`} />
+                ) : (
+                  <Video className="w-3.5 h-3.5" />
+                )
+              )}
               <span>{folder.label}</span>
               {typeof folder.count === 'number' && folder.count > 0 && (
                 <span
-                  className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                    isActive ? 'bg-white/25 text-white' : 'bg-cyan-500/20 text-cyan-400'
+                  className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black tabular-nums ${
+                    isActive
+                      ? 'bg-white/25 text-white'
+                      : isLiveFolder
+                      ? 'bg-rose-500/25 text-rose-300'
+                      : 'bg-cyan-500/20 text-cyan-400'
                   }`}
                 >
                   {folder.count}
@@ -182,8 +266,8 @@ export const ChatsTab: React.FC = () => {
         })}
       </div>
 
-      {/* WhatsApp Archived banner row if any archived and not currently in archived filter */}
-      {archivedCount > 0 && activeFilter !== 'archived' && (
+      {/* WhatsApp Archived banner row if any archived and not currently in archived/live filter */}
+      {archivedCount > 0 && activeFilter !== 'archived' && activeFilter !== 'live' && (
         <button
           onClick={() => setActiveFilter('archived')}
           className="mx-3 my-1 px-4 py-2.5 rounded-2xl flex items-center justify-between text-xs font-bold hover:bg-white/5 cursor-pointer transition-colors border border-white/5"
@@ -197,15 +281,46 @@ export const ChatsTab: React.FC = () => {
         </button>
       )}
 
-      {/* Conversations List with WhatsApp Business & Telegram tags */}
+      {/* NAKEIC Live Vertical Video Hub OR Conversations List */}
+      {activeFilter === 'live' ? (
+        <LiveFeedView
+          initialRoomId={requestedRoomId || undefined}
+          onCountChange={setLiveCount}
+          onExitToChats={() => {
+            setRequestedRoomId(null);
+            setActiveFilter('all');
+          }}
+        />
+      ) : (
       <div className="flex-1 overflow-y-auto divide-y divide-white/5 px-2">
+        {globalMsgResults.length > 0 && (
+          <div className="py-2 px-2 space-y-1">
+            <p className="text-[10px] font-extrabold text-cyan-400 uppercase tracking-wider">
+              Mensajes encontrados ({globalMsgResults.length})
+            </p>
+            {globalMsgResults.map(res => (
+              <button
+                key={res.message.id}
+                onClick={() => setActiveConversationId(res.conversationId)}
+                className="w-full p-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/15 border border-cyan-500/20 text-left cursor-pointer"
+              >
+                <div className="flex items-center justify-between text-[11px] font-bold text-white">
+                  <span>{res.conversationTitle}</span>
+                  <span className="text-[10px] text-slate-400">{res.message.senderName}</span>
+                </div>
+                <p className="text-xs text-slate-300 truncate">{res.message.text}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
         {filteredConversations.length === 0 ? (
           <div className="py-20 text-center text-slate-400 text-sm font-medium">
             {activeFilter === 'archived' ? 'No hay chats archivados' : 'No se encontraron conversaciones en esta carpeta'}
           </div>
         ) : (
           filteredConversations.map((conv: Conversation) => {
-            const isUserSender = conv.lastMessage?.senderId === 'user_me';
+            const isUserSender = conv.lastMessage?.senderId === currentUser.id;
             const labelObj = conv.label ? BUSINESS_LABELS[conv.label] : null;
 
             return (
@@ -362,6 +477,7 @@ export const ChatsTab: React.FC = () => {
           })
         )}
       </div>
+      )}
 
       {/* Conversation Context Menu Modal (WhatsApp style) */}
       {selectedConvMenu && (
@@ -561,24 +677,26 @@ export const ChatsTab: React.FC = () => {
       )}
 
       {/* Floating Action Buttons (New Chat & New Group) */}
-      <div className="absolute bottom-4 right-4 flex flex-col gap-2.5 z-10">
-        <button
-          onClick={() => setIsNewGroupModalOpen(true)}
-          title="Crear Nuevo Grupo"
-          className="w-11 h-11 rounded-2xl bg-slate-800/90 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-sm"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
+      {activeFilter !== 'live' && (
+        <div className="absolute bottom-4 right-4 flex flex-col gap-2.5 z-10">
+          <button
+            onClick={() => setIsNewGroupModalOpen(true)}
+            title="Crear Nuevo Grupo"
+            className="w-11 h-11 rounded-2xl bg-slate-800/90 text-cyan-400 border border-cyan-500/30 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-sm"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
 
-        <button
-          onClick={() => setIsNewChatModalOpen(true)}
-          title="Iniciar Nuevo Chat Privado"
-          className="w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all cursor-pointer ring-2 ring-white/20"
-          style={{ backgroundColor: theme.primaryColor }}
-        >
-          <MessageSquarePlus className="w-7 h-7" />
-        </button>
-      </div>
+          <button
+            onClick={() => setIsNewChatModalOpen(true)}
+            title="Iniciar Nuevo Chat Privado"
+            className="w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all cursor-pointer ring-2 ring-white/20"
+            style={{ backgroundColor: theme.primaryColor }}
+          >
+            <MessageSquarePlus className="w-7 h-7" />
+          </button>
+        </div>
+      )}
 
       {/* Business Hub Modal (Catalog, Profile, Quick Replies, Labels, Analytics) */}
       <BusinessHubModal

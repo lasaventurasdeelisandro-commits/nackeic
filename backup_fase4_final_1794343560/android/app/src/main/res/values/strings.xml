@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NAKEIC</string>
+    <string name="channel_messages_name">Mensajes NAKEIC</string>
+    <string name="channel_calls_name">Llamadas NAKEIC</string>
+    <string name="channel_media_name">Transferencias Multimedia</string>
+    <string name="incoming_call_title">Llamada entrante NAKEIC</string>
+    <string name="e2ee_verified">Cifrado de extremo a extremo verificado</string>
+</resources>

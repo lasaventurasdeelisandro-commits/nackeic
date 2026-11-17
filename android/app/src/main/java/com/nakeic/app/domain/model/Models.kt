@@ -2,7 +2,8 @@ package com.nakeic.app.domain.model
 
 /**
  * Modelos de Dominio de Alto Nivel para NAKEIC Android.
- * Desacoplados de Room y redes para pureza arquitectónica Clean Architecture.
+ * Incluyen mensajería E2EE, NAKEIC LIVE (co-hosts, batallas PK, regalos, moderación)
+ * y billetera monetizable (NAKEIC Coins, Creator Diamonds, KYC y Retiros).
  */
 
 data class User(
@@ -14,7 +15,9 @@ data class User(
     val avatarUrl: String? = null,
     val isOnline: Boolean = false,
     val lastSeenTimestamp: Long = 0L,
-    val publicKeyFingerprint: String = ""
+    val publicKeyFingerprint: String = "",
+    val hasPassword: Boolean = false,
+    val hasPin: Boolean = false
 )
 
 data class Conversation(
@@ -26,7 +29,7 @@ data class Conversation(
     val unreadCount: Int = 0,
     val isPinned: Boolean = false,
     val isMuted: Boolean = false,
-    val disappearingDurationSeconds: Long? = null, // 0 / null = OFF, 86400 = 24h, 604800 = 7d, 2592000 = 30d
+    val disappearingDurationSeconds: Long? = null,
     val memberIds: List<String> = emptyList(),
     val adminIds: List<String> = emptyList(),
     val description: String = ""
@@ -47,7 +50,7 @@ data class Message(
     val replyTo: ReplySnapshot? = null,
     val isPinned: Boolean = false,
     val isEdited: Boolean = false,
-    val reactions: Map<String, List<String>> = emptyMap(), // Emoji -> Lista de UserIds
+    val reactions: Map<String, List<String>> = emptyMap(),
     val disappearingAfterSeconds: Long? = null
 )
 
@@ -76,8 +79,8 @@ data class MediaAttachment(
     val mimeType: String,
     val fileName: String,
     val fileSizeBytes: Long,
-    val durationSeconds: Int? = null, // Para audio y video
-    val waveformPoints: List<Float> = emptyList(), // Para notas de voz
+    val durationSeconds: Int? = null,
+    val waveformPoints: List<Float> = emptyList(),
     val thumbnailBase64: String? = null
 )
 
@@ -125,6 +128,7 @@ data class EphemeralStatus(
     val mediaUrl: String? = null,
     val textCaption: String = "",
     val backgroundHex: String? = null,
+    val privacy: Visibility = Visibility.EVERYONE,
     val timestamp: Long,
     val expiresAt: Long,
     val viewersCount: Int = 0,
@@ -146,3 +150,170 @@ enum class Visibility {
     CONTACTS,
     NOBODY
 }
+
+// =========================================================================
+// NAKEIC LIVE STREAMING MODELS
+// =========================================================================
+
+data class LiveComment(
+    val id: String,
+    val roomId: String,
+    val userId: String,
+    val userName: String,
+    val userAvatar: String? = null,
+    val text: String,
+    val type: String = "chat",
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class LiveGift(
+    val id: String,
+    val name: String,
+    val emoji: String,
+    val coins: Int,
+    val animation: String = "pulse"
+)
+
+data class LiveCoHost(
+    val userId: String,
+    val userName: String,
+    val userAvatar: String = "",
+    val isMuted: Boolean = false,
+    val isVideoPaused: Boolean = false,
+    val joinedAt: Long = 0L
+)
+
+data class LiveGuestRequest(
+    val userId: String,
+    val userName: String,
+    val userAvatar: String = "",
+    val requestedAt: Long = 0L
+)
+
+data class LiveBattle(
+    val id: String,
+    val challengerRoomId: String,
+    val opponentRoomId: String,
+    val challengerHostId: String,
+    val challengerHostName: String,
+    val challengerHostAvatar: String = "",
+    val opponentHostId: String,
+    val opponentHostName: String,
+    val opponentHostAvatar: String = "",
+    val challengerScore: Int = 0,
+    val opponentScore: Int = 0,
+    val status: String = "active",
+    val durationSeconds: Int = 180,
+    val startedAt: Long = 0L,
+    val endsAt: Long = 0L,
+    val winnerHostId: String? = null
+)
+
+data class LiveRoom(
+    val id: String,
+    val hostId: String,
+    val hostName: String,
+    val hostUsername: String,
+    val hostAvatar: String = "",
+    val title: String,
+    val description: String = "",
+    val category: String = "General",
+    val coverUrl: String? = null,
+    val sourceMode: String = "camera",
+    val joinPolicy: String = "everyone",
+    val commentsEnabled: Boolean = true,
+    val qualityPreset: String = "auto",
+    val startedAt: Long = 0L,
+    val viewerCount: Int = 0,
+    val peakViewers: Int = 0,
+    val likesCount: Int = 0,
+    val giftsCount: Int = 0,
+    val earnedCoins: Int = 0,
+    val followersCount: Int = 0,
+    val isAudioMuted: Boolean = false,
+    val isVideoPaused: Boolean = false,
+    val coHosts: List<LiveCoHost> = emptyList(),
+    val guestRequests: List<LiveGuestRequest> = emptyList(),
+    val moderatorIds: List<String> = emptyList(),
+    val activeBattle: LiveBattle? = null
+)
+
+data class LiveHistoryItem(
+    val id: String,
+    val hostId: String,
+    val hostName: String,
+    val hostUsername: String,
+    val hostAvatar: String = "",
+    val title: String,
+    val category: String,
+    val durationSeconds: Int,
+    val peakViewers: Int,
+    val likesCount: Int,
+    val giftsCount: Int,
+    val earnedCoins: Int
+)
+
+data class LiveModerationLog(
+    val id: String,
+    val roomId: String,
+    val actorUserId: String,
+    val actorName: String,
+    val targetUserId: String? = null,
+    val action: String,
+    val reason: String? = null,
+    val createdAt: Long
+)
+
+// =========================================================================
+// NAKEIC WALLET, COINS, DIAMONDS, KYC & PAYOUTS MODELS
+// =========================================================================
+
+data class CoinPackage(
+    val id: String,
+    val name: String,
+    val coins: Int,
+    val bonusCoins: Int,
+    val priceCents: Int,
+    val currency: String = "USD",
+    val badge: String? = null
+)
+
+data class WalletAccount(
+    val userId: String,
+    val coinsBalance: Int = 0,
+    val creatorDiamonds: Int = 0,
+    val pendingPayoutCents: Int = 0,
+    val kycStatus: String = "unverified",
+    val kycFullName: String? = null,
+    val kycCountry: String? = null,
+    val updatedAt: Long = 0L
+)
+
+data class WalletTransaction(
+    val id: String,
+    val userId: String,
+    val type: String,
+    val amountCoins: Int,
+    val amountDiamonds: Int,
+    val amountCents: Int,
+    val feeCents: Int,
+    val currency: String,
+    val balanceAfterCoins: Int,
+    val status: String,
+    val description: String,
+    val createdAt: Long
+)
+
+data class PayoutRequest(
+    val id: String,
+    val userId: String,
+    val amountDiamonds: Int,
+    val grossCents: Int,
+    val platformFeeCents: Int,
+    val netCents: Int,
+    val payoutMethod: String,
+    val destinationMasked: String,
+    val status: String,
+    val kycVerified: Boolean,
+    val createdAt: Long
+)

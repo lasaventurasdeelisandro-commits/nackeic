@@ -17,6 +17,14 @@ export interface ThemeConfig {
   fontSize: 'small' | 'medium' | 'large';
 }
 
+export interface UserPrivacySettings {
+  lastSeenVisibility: 'everyone' | 'contacts' | 'nobody';
+  profilePhotoVisibility: 'everyone' | 'contacts' | 'nobody';
+  readReceiptsEnabled: boolean;
+  statusVisibility: 'everyone' | 'contacts' | 'nobody';
+  disappearingDefaultSeconds: number;
+}
+
 export interface User {
   id: string;
   phoneNumber: string;
@@ -27,6 +35,10 @@ export interface User {
   isOnline: boolean;
   lastSeen: string;
   fingerprint: string;
+  hasPassword?: boolean;
+  hasPin?: boolean;
+  blockedUserIds?: string[];
+  privacy?: UserPrivacySettings;
 }
 
 export type MessageType = 'text' | 'image' | 'video' | 'voice' | 'file' | 'location' | 'contact' | 'poll';
@@ -193,6 +205,13 @@ export interface CallRecord {
   durationSeconds: number;
 }
 
+export interface StatusView {
+  viewerId: string;
+  viewerName: string;
+  viewerAvatar?: string;
+  viewedAt: number;
+}
+
 export interface EphemeralStatus {
   id: string;
   userId: string;
@@ -201,6 +220,9 @@ export interface EphemeralStatus {
   mediaUrl?: string;
   textCaption?: string;
   bgHex?: string;
+  privacy?: 'everyone' | 'contacts' | 'nobody';
+  views?: StatusView[];
+  reactions?: Record<string, string>;
   timestamp: number;
   expiresAt: number;
   isViewed: boolean;
@@ -226,6 +248,7 @@ export interface ActiveCallState {
   isFrontCamera: boolean;
   durationSeconds: number;
   status: 'connecting' | 'ringing' | 'connected' | 'ended';
+  iceState?: 'new' | 'checking' | 'connected' | 'completed' | 'failed' | 'disconnected' | 'closed' | string;
   isIncoming?: boolean;
   callerId?: string;
   targetUserId?: string;
@@ -233,4 +256,186 @@ export interface ActiveCallState {
   isGroupCall?: boolean;
   groupTitle?: string;
   groupMembers?: { id: string; name: string; avatar: string }[];
+  errorMessage?: string;
 }
+
+export interface LiveComment {
+  id: string;
+  roomId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  text: string;
+  type: 'chat' | 'system' | 'gift';
+  timestamp: number;
+}
+
+export interface LiveGift {
+  id: string;
+  name: string;
+  emoji: string;
+  coins: number;
+  animation?: 'pulse' | 'float' | 'burst' | 'supernova';
+}
+
+export interface LiveCoHost {
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  isMuted: boolean;
+  isVideoPaused: boolean;
+  joinedAt: number;
+}
+
+export interface LiveGuestRequest {
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  requestedAt: number;
+}
+
+export interface LiveBattle {
+  id: string;
+  challengerRoomId: string;
+  opponentRoomId: string;
+  challengerHostId: string;
+  challengerHostName: string;
+  challengerHostAvatar: string;
+  opponentHostId: string;
+  opponentHostName: string;
+  opponentHostAvatar: string;
+  challengerScore: number;
+  opponentScore: number;
+  status: 'pending' | 'active' | 'completed';
+  durationSeconds: number;
+  startedAt: number;
+  endsAt: number;
+  winnerHostId?: string | null;
+}
+
+export interface LiveModerationLog {
+  id: string;
+  roomId: string;
+  actorId: string;
+  actorName: string;
+  action: 'assign_mod' | 'remove_mod' | 'mute_viewer' | 'ban_viewer' | 'delete_comment' | 'update_banned_words' | 'kick_cohost';
+  targetId?: string;
+  details?: string;
+  createdAt: number;
+}
+
+export interface LiveHistoryItem {
+  id: string;
+  hostId: string;
+  hostName: string;
+  hostUsername: string;
+  hostAvatar: string;
+  title: string;
+  description?: string;
+  category: string;
+  coverUrl?: string;
+  startedAt: number;
+  endedAt: number;
+  durationSeconds: number;
+  peakViewers: number;
+  likesCount: number;
+  giftsCount: number;
+  earnedCoins: number;
+}
+
+export interface LiveRtcConfig {
+  mode: 'livekit_sfu' | 'webrtc_mesh_relay';
+  livekitConfigured: boolean;
+  livekitUrl?: string;
+  livekitToken?: string;
+  iceServers: RTCIceServer[];
+  turnConfigured: boolean;
+}
+
+export interface LiveStreamRoom {
+  id: string;
+  hostId: string;
+  hostName: string;
+  hostUsername: string;
+  hostAvatar: string;
+  title: string;
+  description?: string;
+  category: string;
+  coverUrl?: string;
+  sourceMode: 'camera' | 'screen' | 'studio';
+  joinPolicy?: 'everyone' | 'followers' | 'invite_only';
+  commentsEnabled?: boolean;
+  qualityPreset?: 'auto' | '720p' | '480p' | '360p';
+  bannedWords?: string[];
+  startedAt: number;
+  viewerCount: number;
+  peakViewers: number;
+  likesCount: number;
+  giftsCount: number;
+  earnedCoins?: number;
+  followersCount: number;
+  isAudioMuted: boolean;
+  isVideoPaused: boolean;
+  pinnedComment?: { id: string; userName: string; text: string } | null;
+  lastFrame?: string;
+  comments?: LiveComment[];
+  coHosts?: LiveCoHost[];
+  guestRequests?: LiveGuestRequest[];
+  moderators?: string[];
+  activeBattle?: LiveBattle | null;
+}
+
+export interface CoinPackage {
+  id: string;
+  name: string;
+  coins: number;
+  bonusCoins: number;
+  priceCents: number;
+  currency: 'USD';
+  badge?: string;
+}
+
+export interface WalletAccount {
+  userId: string;
+  coinsBalance: number;
+  creatorDiamonds: number;
+  pendingPayoutCents: number;
+  kycStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
+  kycFullName?: string;
+  kycCountry?: string;
+  kycSubmittedAt?: number;
+  updatedAt: number;
+}
+
+export interface WalletTransaction {
+  id: string;
+  userId: string;
+  type: 'coin_purchase' | 'gift_sent' | 'gift_received' | 'payout_requested' | 'payout_completed' | 'bonus' | 'refund';
+  amountCoins: number;
+  amountDiamonds: number;
+  amountCents: number;
+  feeCents: number;
+  currency: string;
+  balanceAfterCoins: number;
+  referenceId?: string;
+  status: 'pending' | 'completed' | 'failed' | 'rejected';
+  description: string;
+  signatureVerified: boolean;
+  createdAt: number;
+}
+
+export interface PayoutRequest {
+  id: string;
+  userId: string;
+  amountDiamonds: number;
+  grossCents: number;
+  platformFeeCents: number;
+  netCents: number;
+  payoutMethod: 'bank_transfer' | 'stripe_connect' | 'paypal';
+  destinationMasked: string;
+  status: 'pending_kyc' | 'queued_compliance' | 'approved' | 'paid' | 'rejected';
+  kycVerified: boolean;
+  createdAt: number;
+}
+
+

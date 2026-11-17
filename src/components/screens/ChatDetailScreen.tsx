@@ -44,7 +44,8 @@ import {
   Globe,
   ShoppingBag,
   Zap,
-  ShieldCheck
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Message, MessageType, BusinessProduct } from '../../types';
@@ -84,6 +85,8 @@ export const ChatDetailScreen: React.FC = () => {
     recordingDuration,
     recordedAudioBlob,
     recordedWaveform,
+    voiceError,
+    clearVoiceError,
     startVoiceRecording,
     pauseVoiceRecording,
     resumeVoiceRecording,
@@ -132,6 +135,10 @@ export const ChatDetailScreen: React.FC = () => {
   const [silentToast, setSilentToast] = useState<string | null>(null);
   const [productSentToast, setProductSentToast] = useState<string | null>(null);
   const [translatedMsgIds, setTranslatedMsgIds] = useState<Record<string, string>>({});
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('spam');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reportFeedback, setReportFeedback] = useState<string | null>(null);
 
   // Audio Playback speeds (1x, 1.5x, 2x)
   const [audioSpeeds, setAudioSpeeds] = useState<Record<string, number>>({});
@@ -727,6 +734,25 @@ export const ChatDetailScreen: React.FC = () => {
             <Pin className="w-4 h-4 text-slate-400" />
             <span>Fijar último mensaje</span>
           </button>
+
+          <button
+            onClick={() => {
+              setReportFeedback(null);
+              setIsReportModalOpen(true);
+              setShowOptionsMenu(false);
+            }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-rose-500/10 text-rose-400 text-left cursor-pointer"
+          >
+            <ShieldAlert className="w-4 h-4" />
+            <span>Denunciar {conversation.isGroup ? 'grupo' : 'usuario'}</span>
+          </button>
+        </div>
+      )}
+
+      {voiceError && (
+        <div className="mx-3 mt-2 px-3 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between gap-2 z-20">
+          <span>{voiceError}</span>
+          <button onClick={clearVoiceError} className="font-bold text-white cursor-pointer">Cerrar</button>
         </div>
       )}
 
@@ -1991,6 +2017,80 @@ export const ChatDetailScreen: React.FC = () => {
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-slate-900/90 text-emerald-300 border border-emerald-500/40 shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-3 backdrop-blur-md">
           <Store className="w-4 h-4 text-emerald-400" />
           <span>{productSentToast}</span>
+        </div>
+      )}
+
+      {/* Report Chat / User Modal */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
+          <div
+            className="w-full max-w-sm rounded-3xl border shadow-2xl p-5 space-y-3"
+            style={{
+              backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#CBD5E1',
+              color: isDark ? '#FFFFFF' : '#0F172A'
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm flex items-center gap-2 text-rose-400">
+                <ShieldAlert className="w-4 h-4" />
+                Denunciar {conversation.isGroup ? 'Grupo' : 'Usuario'}
+              </h3>
+              <button onClick={() => setIsReportModalOpen(false)} className="text-slate-400 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <select
+              value={reportReason}
+              onChange={e => setReportReason(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-black/25 border border-white/10 text-xs outline-none"
+            >
+              <option value="spam">Spam o fraude</option>
+              <option value="harassment">Acoso o suplantación</option>
+              <option value="inappropriate">Contenido inapropiado</option>
+              <option value="security">Riesgo de seguridad / phishing</option>
+            </select>
+            <textarea
+              rows={3}
+              value={reportDetails}
+              onChange={e => setReportDetails(e.target.value)}
+              placeholder="Detalles opcionales para moderación..."
+              className="w-full px-3 py-2 rounded-xl bg-black/25 border border-white/10 text-xs outline-none resize-none"
+            />
+            {reportFeedback && <p className="text-xs text-emerald-400 font-semibold">{reportFeedback}</p>}
+            <button
+              onClick={async () => {
+                const token = localStorage.getItem('nakeic_auth_token');
+                if (!token) {
+                  setReportFeedback('Debes iniciar sesión verificada para enviar denuncias.');
+                  return;
+                }
+                const targetId = conversation.isGroup
+                  ? conversation.id
+                  : conversation.memberIds.find(id => id !== currentUser.id) || conversation.id;
+                const res = await fetch('/api/reports', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                  body: JSON.stringify({
+                    targetType: conversation.isGroup ? 'group' : 'user',
+                    targetId,
+                    reason: reportReason,
+                    details: reportDetails
+                  })
+                });
+                if (res.ok) {
+                  setReportFeedback('Denuncia registrada correctamente para revisión.');
+                  setReportDetails('');
+                  setTimeout(() => setIsReportModalOpen(false), 1200);
+                } else {
+                  setReportFeedback('No se pudo registrar la denuncia.');
+                }
+              }}
+              className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold cursor-pointer"
+            >
+              Enviar Denuncia
+            </button>
+          </div>
         </div>
       )}
     </div>

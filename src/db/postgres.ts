@@ -60,20 +60,45 @@ export class PostgresService {
     }
   }
 
-  async runMigrations(): Promise<void> {
-    const migrationFile = path.resolve(process.cwd(), 'src/db/migrations/0001_initial_schema.sql');
-    if (!fs.existsSync(migrationFile)) {
-      throw new Error(`Migration file not found at ${migrationFile}`);
+  async runMigrations(): Promise<string[]> {
+    const migrationsDir = path.resolve(process.cwd(), 'src/db/migrations');
+    if (!fs.existsSync(migrationsDir)) {
+      throw new Error(`Migrations directory not found at ${migrationsDir}`);
     }
-    const sql = fs.readFileSync(migrationFile, 'utf-8');
+    const files = fs
+      .readdirSync(migrationsDir)
+      .filter((f) => f.endsWith('.sql'))
+      .sort();
+
+    const applied: string[] = [];
     const client = await this.pool.connect();
     try {
-      await client.query('BEGIN');
-      await client.query(sql);
-      await client.query('COMMIT');
-      console.log('[NAKEIC PostgreSQL] Migrations executed successfully.');
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+          version VARCHAR(128) PRIMARY KEY,
+          applied_at BIGINT NOT NULL
+        );
+      `);
+
+      for (const file of files) {
+        const existsRes = await client.query('SELECT 1 FROM schema_migrations WHERE version = $1', [file]);
+        if (existsRes.rows.length > 0) continue;
+
+        const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
+        await client.query('BEGIN');
+        await client.query(sql);
+        await client.query('INSERT INTO schema_migrations (version, applied_at) VALUES ($1, $2)', [file, Date.now()]);
+        await client.query('COMMIT');
+        applied.push(file);
+        console.log(`[NAKEIC PostgreSQL] Migración aplicada: ${file}`);
+      }
+      return applied;
     } catch (err: any) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        // ignore rollback error if not in tx
+      }
       throw new Error(`Migration failed: ${err.message}`);
     } finally {
       client.release();

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageSquare, Radio, Phone, Settings, Camera, Smartphone, QrCode } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { NakeicLogo } from '../common/NakeicLogo';
@@ -16,18 +16,60 @@ export const MainTabsScreen: React.FC = () => {
     calls,
     statuses,
     setIsCameraOpen,
+    liveToastNotification,
+    dismissLiveToast,
     theme
   } = useApp();
 
   const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
   const isDark = theme.mode === 'dark' || (theme.mode === 'system' && true);
 
+  useEffect(() => {
+    const onOpenWallet = () => {
+      setActiveTab('settings');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('nakeic:settings_subpage', { detail: 'wallet' }));
+      }, 40);
+    };
+    window.addEventListener('nakeic:open_wallet', onOpenWallet);
+    return () => window.removeEventListener('nakeic:open_wallet', onOpenWallet);
+  }, [setActiveTab]);
+
   const totalUnreadChats = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
   const unreadStatuses = statuses.filter(s => !s.isViewed).length;
   const missedCalls = calls.filter(c => c.direction === 'missed').length;
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
+    <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+      {/* Live Creator Notification Toast */}
+      {liveToastNotification && (
+        <div className="mx-3 mt-2 px-3 py-2 rounded-2xl bg-gradient-to-r from-rose-600/95 to-pink-600/95 text-white shadow-xl flex items-center justify-between gap-2 z-30 animate-in fade-in slide-in-from-top-2">
+          <button
+            onClick={() => {
+              const roomId = liveToastNotification.roomId;
+              dismissLiveToast();
+              setActiveTab('chats');
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('nakeic:open_live_room', { detail: { roomId } }));
+              }, 50);
+            }}
+            className="flex-1 text-left min-w-0 cursor-pointer"
+          >
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span>NAKEIC LIVE · {liveToastNotification.creatorName}</span>
+            </div>
+            <p className="text-xs font-semibold truncate">{liveToastNotification.title}</p>
+          </button>
+          <button
+            onClick={dismissLiveToast}
+            className="px-2 py-1 rounded-lg bg-black/25 hover:bg-black/40 text-[10px] font-bold cursor-pointer shrink-0"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
       {/* Top Application Bar with WhatsApp-style bold typography and larger logo */}
       <div
         className="px-4 py-3 flex items-center justify-between border-b shrink-0 z-20 shadow-sm"

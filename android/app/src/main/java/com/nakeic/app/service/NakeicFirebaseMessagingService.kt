@@ -23,9 +23,8 @@ import java.net.URL
 /**
  * NakeicFirebaseMessagingService
  * Implementación oficial de FirebaseMessagingService para NAKEIC Android.
- * - Registra y rota tokens FCM con el backend (/api/users/fcm-token).
- * - Maneja notificaciones entrantes cuando la app está abierta, en segundo plano o cerrada.
- * - Despierta el servicio Foreground VoIP (NakeicCallService) ante señalización de llamadas entrantes.
+ * - Registra y rota tokens FCM con el backend (/api/users/fcm-token) usando la sesión autenticada real.
+ * - Maneja notificaciones entrantes de mensajes, llamadas VoIP y alertas NAKEIC LIVE.
  */
 class NakeicFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -39,15 +38,15 @@ class NakeicFirebaseMessagingService : FirebaseMessagingService() {
 
         val data = remoteMessage.data
         val title = data["title"] ?: remoteMessage.notification?.title ?: "Mensaje NAKEIC"
-        val body = data["body"] ?: remoteMessage.notification?.body ?: "Tienes un mensaje nuevo cifrado de extremo a extremo"
+        val body = data["body"] ?: remoteMessage.notification?.body ?: "Tienes una actualización nueva"
         val conversationId = data["conversationId"]
+        val liveRoomId = data["roomId"]
         val isCallSignal = data["isCallSignal"]?.toBoolean() ?: false
 
         if (isCallSignal) {
             val callerName = data["callerName"] ?: "Llamada NAKEIC"
             val isVideo = data["isVideo"]?.toBoolean() ?: false
 
-            // Despertar servicio de llamada VoIP en primer plano de forma inmediata (Full-screen intent)
             val callIntent = Intent(this, NakeicCallService::class.java).apply {
                 action = NakeicCallService.ACTION_START_CALL
                 putExtra(NakeicCallService.EXTRA_CALLER_NAME, callerName)
@@ -59,11 +58,20 @@ class NakeicFirebaseMessagingService : FirebaseMessagingService() {
                 startService(callIntent)
             }
         } else {
-            dispatchMessageNotification(title, body, conversationId)
+            dispatchMessageNotification(title, body, conversationId, liveRoomId)
         }
     }
 
     private fun registerFcmTokenWithBackend(token: String) {
+        val prefs = applicationContext.getSharedPreferences("nakeic_auth_prefs", Context.MODE_PRIVATE)
+        val userId = prefs.getString("user_id", null)
+        val authToken = prefs.getString("auth_token", null)
+        if (userId.isNullOrBlank() || authToken.isNullOrBlank()) {
+            // Token pendiente hasta completar inicio de sesión verificado
+            prefs.edit().putString("pending_fcm_token", token).apply()
+            return
+        }
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val environment = NetworkEnvironment.resolve()
@@ -72,11 +80,12 @@ class NakeicFirebaseMessagingService : FirebaseMessagingService() {
                     requestMethod = "POST"
                     doOutput = true
                     setRequestProperty("Content-Type", "application/json")
+                    setRequestProperty("Authorization", "Bearer $authToken")
                     connectTimeout = 5000
                     readTimeout = 5000
                 }
                 val payload = JSONObject().apply {
-                    put("userId", "user_me")
+                    put("userId", userId)
                     put("fcmToken", token)
                 }
                 OutputStreamWriter(conn.outputStream).use { it.write(payload.toString()) }
@@ -85,12 +94,18 @@ class NakeicFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    private fun dispatchMessageNotification(title: String, body: String, conversationId: String?) {
+    private fun dispatchMessageNotification(
+        title: String,
+        body: String,
+        conversationId: String?,
+        liveRoomId: String?
+    ) {
         val notificationManager = getSystemService<NotificationManager>() ?: return
 
         val clickIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("CONVERSATION_ID", conversationId)
+            if (!conversationId.isNullOrBlank()) putExtra("CONVERSATION_ID", conversationId)
+            if (!liveRoomId.isNullOrBlank()) putExtra("LIVE_ROOM_ID", liveRoomId)
         }
 
         val pendingIntent = PendingIntent.getActivity(

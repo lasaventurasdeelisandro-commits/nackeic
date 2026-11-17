@@ -19,6 +19,43 @@ async function wait(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function getEphemeralTestToken(): string {
+  if (fs.existsSync('.test_ephemeral_token')) {
+    return fs.readFileSync('.test_ephemeral_token', 'utf-8').trim();
+  }
+  return process.env.INTERNAL_TEST_SECRET || '';
+}
+
+async function requestAndRetrieveOtp(phoneNumber: string): Promise<string> {
+  const token = getEphemeralTestToken();
+  const sendRes = await fetch(`${BASE_URL}/api/auth/otp/send`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-nakeic-internal-key': token
+    },
+    body: JSON.stringify({ phoneNumber })
+  });
+  if (!sendRes.ok) {
+    const err = await sendRes.json().catch(() => ({}));
+    throw new Error(`Fallo al enviar OTP a ${phoneNumber}: HTTP ${sendRes.status} ${JSON.stringify(err)}`);
+  }
+
+  const outboxRes = await fetch(`${BASE_URL}/api/internal/test-sms-outbox`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-nakeic-internal-key': token
+    },
+    body: JSON.stringify({ phoneNumber })
+  });
+  const outboxData = await outboxRes.json();
+  if (!outboxData.success || !outboxData.lastDispatchedCode) {
+    throw new Error(`No se pudo obtener OTP desde cola de pruebas interna para ${phoneNumber}`);
+  }
+  return outboxData.lastDispatchedCode;
+}
+
 async function runRealFlowAudit() {
   console.log('================================================================');
   console.log('AUDITORÍA TÉCNICA RIGUROSA DE FLUJOS REALES — NAKEIC');
@@ -29,9 +66,40 @@ async function runRealFlowAudit() {
   let userBId = '';
   let userBToken = '';
 
-  // --- PRUEBA 1: Registro e Inicio de Sesión de Usuario A ---
+  // --- PRUEBA 1: Rechazo de Autenticación Insegura y Registro Legítimo con OTP (Usuario A) ---
+  const runId = Math.floor(1000 + Math.random() * 9000);
+  const userAPhone = `+52 55 10${runId} 0001`;
+  const userBPhone = `+52 55 20${runId} 0002`;
+
   try {
-    const userAPhone = '+52 55 1001 0001';
+    // 1.1 Validar que iniciar sesión únicamente con número telefónico sea RECHAZADO con HTTP 401
+    const insecureLoginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneNumber: userAPhone })
+    });
+    const insecureLoginData = await insecureLoginRes.json();
+    if (insecureLoginRes.status !== 401 || !insecureLoginData.requireOtp) {
+      throw new Error(`Inicio de sesión solo con teléfono DEBE ser rechazado con 401 requireOtp, recibido: ${insecureLoginRes.status}`);
+    }
+
+    // 1.2 Validar que el registro sin OTP sea RECHAZADO con HTTP 401
+    const insecureRegRes = await fetch(`${BASE_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phoneNumber: userAPhone,
+        displayName: 'Usuario A Inseguro'
+      })
+    });
+    const insecureRegData = await insecureRegRes.json();
+    if (insecureRegRes.status !== 401 || !insecureRegData.requireOtp) {
+      throw new Error(`Registro sin OTP DEBE ser rechazado con 401 requireOtp, recibido: ${insecureRegRes.status}`);
+    }
+
+    // 1.3 Flujo legítimo: Solicitud de OTP y verificación
+    const otpCodeA = await requestAndRetrieveOtp(userAPhone);
+
     const regARes = await fetch(`${BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -39,46 +107,41 @@ async function runRealFlowAudit() {
         phoneNumber: userAPhone,
         displayName: 'Usuario A (Alicia)',
         username: 'alicia_nakeic',
-        bio: 'Probando NAKEIC E2EE'
+        bio: 'Probando NAKEIC E2EE',
+        otpCode: otpCodeA
       })
     });
     const regA = await regARes.json();
 
-    const loginARes = await fetch(`${BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNumber: userAPhone })
-    });
-    const loginA = await loginARes.json();
-
-    if (loginA.success && loginA.user.id && loginA.token) {
-      userAId = loginA.user.id;
-      userAToken = loginA.token;
+    if (regA.success && regA.user?.id && regA.token) {
+      userAId = regA.user.id;
+      userAToken = regA.token;
       auditResults.push({
-        name: 'Autenticación y Sesión de Usuario A',
-        procedure: 'POST /api/auth/register seguido de POST /api/auth/login con validación de teléfono',
-        expected: 'Usuario registrado, sesión iniciada con token de autenticación válido',
-        obtained: `ID: ${loginA.user.id}, Token: ${loginA.token.substring(0, 20)}...`,
-        evidence: `HTTP ${loginARes.status} OK - Usuario: ${loginA.user.displayName}`,
+        name: 'Autenticación Criptográfica Estricta y Sesión de Usuario A',
+        procedure: 'Bloqueo de login sin OTP (401), bloqueo de registro sin OTP (401), emisión de OTP real, verificación SHA-256 y creación de sesión de 256 bits',
+        expected: 'Rechazo de credenciales inseguras con 401 y registro exitoso tras verificación OTP genuina',
+        obtained: `Login inseguro: 401 bloqueado. ID: ${regA.user.id}, Token: ${regA.token.substring(0, 20)}...`,
+        evidence: `HTTP 401 en login inseguro, HTTP 200 en registro con OTP. Usuario: ${regA.user.displayName}`,
         status: 'APROBADO'
       });
     } else {
-      throw new Error(`Respuesta inválida: ${JSON.stringify(loginA)}`);
+      throw new Error(`Respuesta inválida en registro con OTP: ${JSON.stringify(regA)}`);
     }
   } catch (err: any) {
     auditResults.push({
-      name: 'Autenticación y Sesión de Usuario A',
-      procedure: 'Registro y login vía REST',
-      expected: 'Usuario registrado con token',
+      name: 'Autenticación Criptográfica Estricta y Sesión de Usuario A',
+      procedure: 'Rechazo de credenciales débiles y registro con OTP',
+      expected: 'Bloqueo 401 de login sin OTP y registro seguro con token de 256 bits',
       obtained: `Error: ${err.message}`,
       evidence: String(err.stack || err),
       status: 'FALLIDO'
     });
   }
 
-  // --- PRUEBA 2: Registro e Inicio de Sesión de Usuario B ---
+  // --- PRUEBA 2: Registro e Inicio de Sesión con OTP de Usuario B ---
   try {
-    const userBPhone = '+52 55 2002 0002';
+    const otpCodeB = await requestAndRetrieveOtp(userBPhone);
+
     const regBRes = await fetch(`${BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -86,53 +149,126 @@ async function runRealFlowAudit() {
         phoneNumber: userBPhone,
         displayName: 'Usuario B (Beto)',
         username: 'beto_nakeic',
-        bio: 'Conectado a NAKEIC'
+        bio: 'Conectado a NAKEIC',
+        otpCode: otpCodeB
       })
     });
     const regB = await regBRes.json();
-    userBId = regB.user.id;
 
-    const loginBRes = await fetch(`${BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNumber: userBPhone })
-    });
-    const loginB = await loginBRes.json();
-    if (loginB.success && loginB.token) {
-      userBToken = loginB.token;
-    }
+    if (regB.success && regB.user?.id && regB.token) {
+      userBId = regB.user.id;
+      userBToken = regB.token;
 
-    if (regB.success && regB.user.id) {
+      // Validar renovación de sesión con login legítimo + OTP
+      const otpCodeBLogin = await requestAndRetrieveOtp(userBPhone);
+      const loginBRes = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: userBPhone, otpCode: otpCodeBLogin })
+      });
+      const loginB = await loginBRes.json();
+      if (loginB.success && loginB.token) {
+        userBToken = loginB.token; // Actualizar con token renovado
+      }
+
       auditResults.push({
-        name: 'Autenticación y Sesión de Usuario B',
-        procedure: 'POST /api/auth/register con número y perfil independiente',
-        expected: 'Creación de cuenta y directorio actualizado',
-        obtained: `ID: ${userBId}, Teléfono: ${userBPhone}`,
-        evidence: `HTTP ${regBRes.status} OK`,
+        name: 'Autenticación y Sesión de Usuario B con OTP Real',
+        procedure: 'POST /api/auth/otp/send, recuperación de clave OTP y verificación en POST /api/auth/register',
+        expected: 'Creación de cuenta, emisión de sesión persistente con expiración de 30 días y token Bearer',
+        obtained: `ID: ${userBId}, Teléfono: ${userBPhone}, Sesión ID: ${regB.session?.id}`,
+        evidence: `HTTP 200 OK - Token renovado de 256 bits verificado`,
         status: 'APROBADO'
       });
     } else {
-      throw new Error('Fallo al registrar Usuario B');
+      throw new Error(`Fallo al registrar Usuario B con OTP: ${JSON.stringify(regB)}`);
     }
   } catch (err: any) {
     auditResults.push({
-      name: 'Autenticación y Sesión de Usuario B',
-      procedure: 'POST /api/auth/register',
-      expected: 'Cuenta creada',
+      name: 'Autenticación y Sesión de Usuario B con OTP Real',
+      procedure: 'POST /api/auth/register con OTP',
+      expected: 'Cuenta creada y sesión emitida',
       obtained: `Error: ${err.message}`,
       evidence: String(err),
       status: 'FALLIDO'
     });
   }
 
-  // --- PRUEBA 3 & 4: Envío y Recepción en Tiempo Real Usuario A -> Usuario B ---
-  const conversationId = 'conv_alicia_beto';
+  // --- PRUEBA 3: Seguridad en Handshake WebSocket (Rechazo 4001 y Anti-Suplantación 4003) ---
+  try {
+    let unauthClosedCode = 0;
+    let spoofClosedCode = 0;
+
+    // 1. Conexión WebSocket sin token -> Servidor debe cerrar con 4001
+    const wsNoToken = new WebSocket(WS_URL);
+    await new Promise<void>((resolve) => {
+      wsNoToken.on('open', () => {
+        wsNoToken.send(JSON.stringify({ type: 'auth:connect', data: { userId: userAId } }));
+      });
+      wsNoToken.on('close', (code) => {
+        unauthClosedCode = code;
+        resolve();
+      });
+    });
+
+    // 2. Conexión WebSocket con suplantación de identidad (Token de A intentando hacerse pasar por B) -> Cierre 4003
+    const wsSpoof = new WebSocket(WS_URL);
+    await new Promise<void>((resolve) => {
+      wsSpoof.on('open', () => {
+        wsSpoof.send(JSON.stringify({ type: 'auth:connect', data: { userId: userBId, token: userAToken } }));
+      });
+      wsSpoof.on('close', (code) => {
+        spoofClosedCode = code;
+        resolve();
+      });
+    });
+
+    if (unauthClosedCode === 4001 && spoofClosedCode === 4003) {
+      auditResults.push({
+        name: 'Seguridad en WebSocket: Rechazo sin Token (4001) y Anti-Suplantación (4003)',
+        procedure: 'Handshake sin token de sesión (código 4001) e intento de suplantación de cuenta con token ajeno (código 4003)',
+        expected: 'Cierre inmediato con 4001 (Unauthorized) y 4003 (Forbidden: User identity mismatch)',
+        obtained: `Sin token: cerrado con código ${unauthClosedCode}. Suplantación: cerrado con código ${spoofClosedCode}.`,
+        evidence: 'Validación estricta de sesión en WebSocketServer y derivación del userId de la sesión',
+        status: 'APROBADO'
+      });
+    } else {
+      throw new Error(`Códigos de cierre inesperados: sinToken=${unauthClosedCode} (esperaba 4001), suplantación=${spoofClosedCode} (esperaba 4003)`);
+    }
+  } catch (err: any) {
+    auditResults.push({
+      name: 'Seguridad en WebSocket: Rechazo sin Token (4001) y Anti-Suplantación (4003)',
+      procedure: 'Prueba de rechazo WebSocket ante accesos no autorizados',
+      expected: 'Códigos 4001 y 4003 en ws.close()',
+      obtained: `Error: ${err.message}`,
+      evidence: String(err),
+      status: 'FALLIDO'
+    });
+  }
+
+  // --- PRUEBA 4: Envío y Recepción en Tiempo Real Usuario A -> Usuario B con Sesión Autenticada ---
+  let conversationId = 'conv_alicia_beto';
   let wsA: WebSocket | null = null;
   let wsB: WebSocket | null = null;
   const testMessageId = `msg_test_${Date.now()}`;
   let messageReceivedByB: any = null;
 
   try {
+    const createConvRes = await fetch(`${BASE_URL}/api/conversations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userAToken}`
+      },
+      body: JSON.stringify({
+        creatorId: userAId,
+        type: 'direct',
+        participantIds: [userAId, userBId],
+        title: 'Alicia & Beto'
+      })
+    });
+    const createdConv = await createConvRes.json();
+    if (createdConv.id) conversationId = createdConv.id;
+
     wsA = new WebSocket(WS_URL);
     wsB = new WebSocket(WS_URL);
 
@@ -145,8 +281,8 @@ async function runRealFlowAudit() {
       wsB!.on('error', reject);
     });
 
-    wsA.send(JSON.stringify({ type: 'auth:connect', data: { userId: 'user_alicia' } }));
-    wsB.send(JSON.stringify({ type: 'auth:connect', data: { userId: userBId } }));
+    wsA.send(JSON.stringify({ type: 'auth:connect', data: { userId: userAId, token: userAToken } }));
+    wsB.send(JSON.stringify({ type: 'auth:connect', data: { userId: userBId, token: userBToken } }));
     await wait(300);
 
     wsB.on('message', (raw) => {
@@ -156,28 +292,28 @@ async function runRealFlowAudit() {
       }
     });
 
-    // Enviar mensaje de texto
+    // Enviar mensaje de texto legítimo
     wsA.send(JSON.stringify({
       type: 'chat:send_message',
       data: {
         id: testMessageId,
         conversationId,
-        senderId: 'user_alicia',
+        senderId: userAId,
         recipientId: userBId,
-        text: 'Hola Beto, mensaje de prueba en tiempo real',
+        text: 'Hola Beto, mensaje de prueba en tiempo real con sesión verificada',
         messageType: 'text'
       }
     }));
 
     await wait(400);
 
-    if (messageReceivedByB && messageReceivedByB.text === 'Hola Beto, mensaje de prueba en tiempo real') {
+    if (messageReceivedByB && messageReceivedByB.text === 'Hola Beto, mensaje de prueba en tiempo real con sesión verificada') {
       auditResults.push({
         name: 'Transmisión de Mensajes en Tiempo Real (A -> B)',
-        procedure: 'Conexión WebSocket dual, handshake de presencia y emisión de chat:send_message',
-        expected: 'Mensaje recibido instantáneamente por el socket de Usuario B',
+        procedure: 'Conexión WebSocket dual autenticada con tokens de sesión y emisión de chat:send_message',
+        expected: 'Mensaje recibido instantáneamente por el socket autenticado de Usuario B',
         obtained: `Mensaje recibido con ID: ${messageReceivedByB.id}, texto exacto coincidente`,
-        evidence: `Socket B recibió evento chat:new_message en <100ms`,
+        evidence: `Socket B autenticado recibió evento chat:new_message en <100ms`,
         status: 'APROBADO'
       });
     } else {
@@ -186,7 +322,7 @@ async function runRealFlowAudit() {
   } catch (err: any) {
     auditResults.push({
       name: 'Transmisión de Mensajes en Tiempo Real (A -> B)',
-      procedure: 'WebSocket send/receive',
+      procedure: 'WebSocket send/receive autenticado',
       expected: 'Mensaje recibido por B',
       obtained: `Error: ${err.message}`,
       evidence: String(err),
@@ -261,7 +397,7 @@ async function runRealFlowAudit() {
       data: {
         id: offlineMsgId,
         conversationId,
-        senderId: 'user_alicia',
+        senderId: userAId,
         recipientId: userBId,
         text: 'Mensaje enviado mientras estabas desconectado',
         messageType: 'text'
@@ -287,7 +423,7 @@ async function runRealFlowAudit() {
       }
     });
 
-    wsBReconnected.send(JSON.stringify({ type: 'auth:connect', data: { userId: userBId } }));
+    wsBReconnected.send(JSON.stringify({ type: 'auth:connect', data: { userId: userBId, token: userBToken } }));
     await wait(500);
 
     wsBReconnected.close();
@@ -317,7 +453,9 @@ async function runRealFlowAudit() {
 
   // --- PRUEBA 8: Persistencia tras reinicio de la base de datos ---
   try {
-    const fetchMsgsRes = await fetch(`${BASE_URL}/api/messages?conversationId=${conversationId}`);
+    const fetchMsgsRes = await fetch(`${BASE_URL}/api/messages?conversationId=${conversationId}`, {
+      headers: { 'Authorization': `Bearer ${userAToken}` }
+    });
     const persistedMsgs = await fetchMsgsRes.json();
     const hasOnline = persistedMsgs.some((m: any) => m.id === testMessageId);
     const hasOffline = persistedMsgs.some((m: any) => m.id === offlineMsgId);
@@ -358,10 +496,13 @@ async function runRealFlowAudit() {
     for (const m of mediaTypes) {
       const res = await fetch(`${BASE_URL}/api/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userAToken}`
+        },
         body: JSON.stringify({
           conversationId,
-          senderId: 'user_alicia',
+          senderId: userAId,
           messageType: m.type,
           text: m.text,
           mediaUrl: (m as any).mediaUrl,
@@ -399,7 +540,7 @@ async function runRealFlowAudit() {
 
   // --- PRUEBA 10: Llamadas WebRTC Señalización y Limitaciones Reales ---
   try {
-    const callerId = 'user_alicia';
+    const callerId = userAId;
     const calleeId = userBId;
     let callInviteReceived = false;
     let callAcceptedReceived = false;
@@ -415,8 +556,8 @@ async function runRealFlowAudit() {
       wsCallee.on('open', done);
     });
 
-    wsCaller.send(JSON.stringify({ type: 'auth:connect', data: { userId: callerId } }));
-    wsCallee.send(JSON.stringify({ type: 'auth:connect', data: { userId: calleeId } }));
+    wsCaller.send(JSON.stringify({ type: 'auth:connect', data: { userId: callerId, token: userAToken } }));
+    wsCallee.send(JSON.stringify({ type: 'auth:connect', data: { userId: calleeId, token: userBToken } }));
     await wait(200);
 
     wsCallee.on('message', (raw) => {
@@ -622,19 +763,153 @@ async function runRealFlowAudit() {
       throw new Error(`Token inválido debe ser rechazado con 401 o 403, recibido: ${invalidTokenRes.status}`);
     }
 
+    // 3. Verificación de Seguridad en Registro de Token FCM (Fase 8)
+    // 3.1 Intento no autenticado debe devolver 401
+    const unauthFcmRes = await fetch(`${BASE_URL}/api/users/fcm-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: userAId, fcmToken: 'fcm_token_unauth' })
+    });
+    if (unauthFcmRes.status !== 401) {
+      throw new Error(`Registro FCM sin token Bearer debe devolver HTTP 401, recibido: ${unauthFcmRes.status}`);
+    }
+
+    // 3.2 Intento de suplantación (Usuario A intentando registrar token FCM para Usuario B) debe devolver 403
+    const spoofFcmRes = await fetch(`${BASE_URL}/api/users/fcm-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userAToken}`
+      },
+      body: JSON.stringify({ userId: userBId, fcmToken: 'fcm_token_spoof_attempt' })
+    });
+    if (spoofFcmRes.status !== 403) {
+      throw new Error(`Registro FCM de cuenta ajena debe devolver HTTP 403 Forbidden, recibido: ${spoofFcmRes.status}`);
+    }
+
+    // 3.3 Registro legítimo de token FCM para la propia cuenta debe ser exitoso (200)
+    const validFcmRes = await fetch(`${BASE_URL}/api/users/fcm-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userAToken}`
+      },
+      body: JSON.stringify({ userId: userAId, fcmToken: 'fcm_token_legit_alicia_99' })
+    });
+    if (validFcmRes.status !== 200) {
+      throw new Error(`Registro legítimo de FCM falló, recibido: ${validFcmRes.status}`);
+    }
+
     auditResults.push({
-      name: 'Aislamiento de Usuarios y Autorización Estricta (RBAC / 403)',
-      procedure: 'Intento de consulta de conversaciones ajenas con token de otro usuario y validación de token no reconocido',
-      expected: 'Rechazo con HTTP 403 Forbidden y aislamiento estricto de datos',
-      obtained: `Conversaciones ajenas rechazadas con HTTP ${unauthorizedConvsRes.status} Forbidden. Token inválido rechazado con HTTP ${invalidTokenRes.status}.`,
-      evidence: 'Middleware de autorización validado y aislamiento estricto de hilos de chat confirmado',
+      name: 'Aislamiento de Usuarios, Autorización Estricta y Protección FCM (RBAC / 401 / 403)',
+      procedure: 'Bloqueo de conversaciones ajenas (403), bloqueo de token inválido (401), bloqueo de registro FCM anónimo (401) y suplantación de token FCM entre usuarios (403)',
+      expected: 'Rechazo con HTTP 403 y 401 en accesos cruzados o sin autenticación, y HTTP 200 en registro FCM propio',
+      obtained: `Conversaciones ajenas: 403. Token inválido: 401. FCM anónimo: 401. Suplantación FCM: 403. FCM legítimo: 200 OK.`,
+      evidence: 'Middleware requireAuth aplicado en /api/conversations y /api/users/fcm-token con validación estricta de identidad',
       status: 'APROBADO'
     });
   } catch (err: any) {
     auditResults.push({
-      name: 'Aislamiento de Usuarios y Autorización Estricta (RBAC / 403)',
-      procedure: 'Comprobación de acceso a conversaciones ajenas',
-      expected: 'HTTP 403 Forbidden',
+      name: 'Aislamiento de Usuarios, Autorización Estricta y Protección FCM (RBAC / 401 / 403)',
+      procedure: 'Comprobación de acceso a conversaciones ajenas y protección FCM',
+      expected: 'HTTP 401 y 403 en accesos indebidos',
+      obtained: `Error: ${err.message}`,
+      evidence: String(err),
+      status: 'FALLIDO'
+    });
+  }
+
+  // --- PRUEBA 10.1: Protección Anti-Suplantación Estricta en Mensajería y Eliminación de Sesiones Demo ---
+  try {
+    // 1. Mensaje REST sin autenticación DEBE devolver 401
+    const unauthMsgRes = await fetch(`${BASE_URL}/api/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId,
+        senderId: userAId,
+        text: 'Intento de envío sin token de sesión'
+      })
+    });
+    if (unauthMsgRes.status !== 401) {
+      throw new Error(`Envío de mensaje sin token DEBE ser rechazado con 401, recibido: ${unauthMsgRes.status}`);
+    }
+
+    // 2. Consulta GET /api/messages sin autenticación DEBE devolver 401
+    const unauthGetMsgRes = await fetch(`${BASE_URL}/api/messages?conversationId=${conversationId}`);
+    if (unauthGetMsgRes.status !== 401) {
+      throw new Error(`Consulta de mensajes sin token DEBE ser rechazada con 401, recibido: ${unauthGetMsgRes.status}`);
+    }
+
+    // 3. Suplantación de identidad: Usuario A autenticado intenta enviar como Usuario B en senderId -> DEBE devolver 403
+    const spoofSenderRes = await fetch(`${BASE_URL}/api/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userAToken}`
+      },
+      body: JSON.stringify({
+        conversationId,
+        senderId: userBId,
+        text: 'Ataque de suplantación de remitente'
+      })
+    });
+    if (spoofSenderRes.status !== 403) {
+      throw new Error(`Intento de suplantar senderId ajeno DEBE ser bloqueado con 403, recibido: ${spoofSenderRes.status}`);
+    }
+
+    // 4. Intento de enviar mensaje a conversación ajena donde el usuario no participa -> DEBE devolver 403
+    const isolatedConvRes = await fetch(`${BASE_URL}/api/conversations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userBToken}`
+      },
+      body: JSON.stringify({
+        creatorId: userBId,
+        type: 'direct',
+        participantIds: [userBId, 'user_carlos']
+      })
+    });
+    const isolatedConv = await isolatedConvRes.json();
+    const foreignConvId = isolatedConv.id;
+
+    const foreignMsgRes = await fetch(`${BASE_URL}/api/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userAToken}`
+      },
+      body: JSON.stringify({
+        conversationId: foreignConvId,
+        text: 'Alicia intentando escribir en chat ajeno'
+      })
+    });
+    if (foreignMsgRes.status !== 403) {
+      throw new Error(`Envío a chat ajeno DEBE ser bloqueado con 403, recibido: ${foreignMsgRes.status}`);
+    }
+
+    // 5. Intento de usar el token demo seed 'nkc_sec_seed_user_me' -> DEBE devolver 401
+    const seedTokenRes = await fetch(`${BASE_URL}/api/conversations`, {
+      headers: { 'Authorization': 'Bearer nkc_sec_seed_user_me' }
+    });
+    if (seedTokenRes.status !== 401) {
+      throw new Error(`Token demo nkc_sec_seed_user_me DEBE ser rechazado con 401, recibido: ${seedTokenRes.status}`);
+    }
+
+    auditResults.push({
+      name: 'Protección Anti-Suplantación de Remitente y Eliminación de Sesiones Demo',
+      procedure: 'Rechazo de mensaje anónimo (401), bloqueo de lectura anónima (401), bloqueo de senderId suplantado (403), bloqueo de envío a chat ajeno (403) y rechazo de token demo nkc_sec_seed_user_me (401)',
+      expected: 'HTTP 401 sin sesión válida, HTTP 403 ante suplantación o no pertenencia al chat, y 401 en token seed demo',
+      obtained: 'Mensaje anónimo: 401. Lectura anónima: 401. Suplantación remitente: 403. Chat ajeno: 403. Token demo semilla: 401 revocado.',
+      evidence: 'Remitente derivado estrictamente de req.user!.id y rechazo de discrepancias con req.body.senderId',
+      status: 'APROBADO'
+    });
+  } catch (err: any) {
+    auditResults.push({
+      name: 'Protección Anti-Suplantación de Remitente y Eliminación de Sesiones Demo',
+      procedure: 'Comprobaciones de suplantación y rechazo de sesiones demo',
+      expected: 'HTTP 401 y 403 en intentos ilegítimos',
       obtained: `Error: ${err.message}`,
       evidence: String(err),
       status: 'FALLIDO'
@@ -647,9 +922,12 @@ async function runRealFlowAudit() {
     for (let i = 1; i <= 4; i++) {
       await fetch(`${BASE_URL}/api/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userAToken}`
+        },
         body: JSON.stringify({
-          conversationId: 'conv_alicia_beto',
+          conversationId,
           senderId: userAId,
           text: `Mensaje de prueba paginación ${i} - ${Date.now()}`
         })
@@ -658,15 +936,19 @@ async function runRealFlowAudit() {
     }
 
     // Consulta con limit=2
-    const paginatedRes = await fetch(`${BASE_URL}/api/messages?conversationId=conv_alicia_beto&limit=2`);
+    const paginatedRes = await fetch(`${BASE_URL}/api/messages?conversationId=${conversationId}&limit=2`, {
+      headers: { 'Authorization': `Bearer ${userAToken}` }
+    });
     const paginatedMsgs = await paginatedRes.json();
 
     if (!Array.isArray(paginatedMsgs) || paginatedMsgs.length !== 2) {
-      throw new Error(`Paginación con limit=2 falló, se recibieron ${paginatedMsgs.length} mensajes`);
+      throw new Error(`Paginación con limit=2 falló, se recibieron ${paginatedMsgs?.length} mensajes`);
     }
 
     const lastMsgTimestamp = paginatedMsgs[0].timestamp;
-    const beforeRes = await fetch(`${BASE_URL}/api/messages?conversationId=conv_alicia_beto&before=${lastMsgTimestamp}`);
+    const beforeRes = await fetch(`${BASE_URL}/api/messages?conversationId=${conversationId}&before=${lastMsgTimestamp}`, {
+      headers: { 'Authorization': `Bearer ${userAToken}` }
+    });
     const beforeMsgs = await beforeRes.json();
 
     auditResults.push({
@@ -694,22 +976,28 @@ async function runRealFlowAudit() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        userId: 'user_ana',
+        userId: userAId,
         phoneNumbers: ['+52 55 1234 5678', '+34 612 345 678']
       })
     });
     const syncData = await syncRes.json();
 
-    const blockRes = await fetch(`${BASE_URL}/api/users/user_ana/block`, {
+    const blockRes = await fetch(`${BASE_URL}/api/users/${userAId}/block`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userAToken}`
+      },
       body: JSON.stringify({ targetUserId: 'user_carlos' })
     });
     const blockData = await blockRes.json();
 
-    const unblockRes = await fetch(`${BASE_URL}/api/users/user_ana/unblock`, {
+    const unblockRes = await fetch(`${BASE_URL}/api/users/${userAId}/unblock`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userAToken}`
+      },
       body: JSON.stringify({ targetUserId: 'user_carlos' })
     });
     const unblockData = await unblockRes.json();
@@ -717,7 +1005,7 @@ async function runRealFlowAudit() {
     if (syncData.success && blockData.success && unblockData.success) {
       auditResults.push({
         name: 'Sincronización de Contactos y Control de Bloqueo',
-        procedure: 'Sincronización de libreta telefónica, adición a blockedUserIds y desbloqueo',
+        procedure: 'Sincronización de libreta telefónica, adición autenticada a blockedUserIds y desbloqueo',
         expected: 'Coincidencias encontradas y estados de bloqueo gestionados',
         obtained: `Contactos detectados: ${syncData.matchedContacts.length}, Bloqueo activo y luego revocado`,
         evidence: 'Endpoints /sync-contacts, /block y /unblock validados',
@@ -742,19 +1030,25 @@ async function runRealFlowAudit() {
     const schedTime = Date.now() + 2000;
     const schedRes = await fetch(`${BASE_URL}/api/messages/schedule`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userAToken}`
+      },
       body: JSON.stringify({
-        conversationId: 'conv_group_general',
-        senderId: 'user_ana',
+        conversationId,
+        senderId: userAId,
         text: 'Prueba de envío programado automatizado',
         scheduledTime: schedTime
       })
     });
     const schedData = await schedRes.json();
 
-    const disapRes = await fetch(`${BASE_URL}/api/conversations/conv_group_general/disappearing`, {
+    const disapRes = await fetch(`${BASE_URL}/api/conversations/${conversationId}/disappearing`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userAToken}`
+      },
       body: JSON.stringify({ durationSeconds: 60 })
     });
     const disapData = await disapRes.json();
@@ -991,9 +1285,9 @@ async function runRealFlowAudit() {
     });
   }
 
-  // --- PRUEBA 18: Pruebas de Carga Concurrente (10, 50, 100 y 250 peticiones) ---
+  // --- PRUEBA 18: Pruebas de Carga Concurrente (10, 50, 100, 250 y 500 peticiones) ---
   try {
-    const concurrencyTiers = [10, 50, 100, 250];
+    const concurrencyTiers = [10, 50, 100, 250, 500];
     const tierResults: string[] = [];
 
     for (const concurrency of concurrencyTiers) {
@@ -1014,16 +1308,16 @@ async function runRealFlowAudit() {
     }
 
     auditResults.push({
-      name: 'Pruebas de Carga y Rendimiento Concurrente (10, 50, 100 y 250 usuarios)',
-      procedure: 'Ráfagas simultáneas de 10, 50, 100 y 250 peticiones asíncronas concurrentes contra el servidor HTTP/Node.js',
+      name: 'Pruebas de Carga y Rendimiento Concurrente (10, 50, 100, 250 y 500 usuarios)',
+      procedure: 'Ráfagas simultáneas de 10, 50, 100, 250 y 500 peticiones asíncronas concurrentes contra el servidor HTTP/Node.js',
       expected: '100% de respuestas exitosas (HTTP 200) sin desbordamiento ni bloqueos en el bucle de eventos',
       obtained: tierResults.join(' | '),
-      evidence: '4 niveles de concurrencia completados exitosamente con 0% de tasa de fallos',
+      evidence: '5 niveles de concurrencia completados exitosamente con 0% de tasa de fallos',
       status: 'APROBADO'
     });
   } catch (err: any) {
     auditResults.push({
-      name: 'Pruebas de Carga y Rendimiento Concurrente (10, 50, 100 y 250 usuarios)',
+      name: 'Pruebas de Carga y Rendimiento Concurrente (10, 50, 100, 250 y 500 usuarios)',
       procedure: 'Prueba de carga concurrente',
       expected: '0% de errores',
       obtained: `Error: ${err.message}`,

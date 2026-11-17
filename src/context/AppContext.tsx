@@ -33,8 +33,12 @@ interface AppContextType {
   // User
   currentUser: User;
   updateCurrentUser: (updates: Partial<User>) => void;
+  applyAuthenticatedSession: (user: Partial<User>, token?: string) => void;
+  logoutSession: () => Promise<void>;
   registerOrSwitchUser: (userData: { phoneNumber: string; displayName: string; username?: string; bio?: string; avatarUrl?: string }) => Promise<void>;
   availableUsers: User[];
+  liveToastNotification: { roomId: string; creatorName: string; title: string; category?: string } | null;
+  dismissLiveToast: () => void;
 
   // Navigation
   activeTab: 'chats' | 'status' | 'calls' | 'settings';
@@ -101,7 +105,10 @@ interface AppContextType {
 
   // Ephemeral Statuses
   statuses: EphemeralStatus[];
-  addStatus: (caption: string, mediaUrl?: string, bgHex?: string) => Promise<void>;
+  addStatus: (caption: string, mediaUrl?: string, bgHex?: string, privacy?: 'everyone' | 'contacts' | 'nobody') => Promise<void>;
+  viewStatus: (statusId: string) => Promise<void>;
+  reactToStatus: (statusId: string, emoji: string) => Promise<void>;
+  deleteStatus: (statusId: string) => Promise<void>;
 
   // Contacts
   contacts: Contact[];
@@ -118,6 +125,8 @@ interface AppContextType {
   recordingDuration: number;
   recordedAudioBlob: Blob | null;
   recordedWaveform: number[];
+  voiceError: string | null;
+  clearVoiceError: () => void;
   startVoiceRecording: () => Promise<void>;
   pauseVoiceRecording: () => void;
   resumeVoiceRecording: () => void;
@@ -163,6 +172,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [isOffline, setIsOffline] = useState<boolean>(false);
   const [isConnectedToServer, setIsConnectedToServer] = useState<boolean>(false);
+  const [liveToastNotification, setLiveToastNotification] = useState<{ roomId: string; creatorName: string; title: string; category?: string } | null>(null);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   // WebRTC Media Streams
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -216,6 +227,42 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
+  // Helper to obtain client Bearer authorization header
+  const getAuthHeaders = (): Record<string, string> => {
+    const token = localStorage.getItem('nakeic_auth_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
+
+  const applyAuthenticatedSession = (userData: Partial<User>, token?: string) => {
+    if (token) {
+      localStorage.setItem('nakeic_auth_token', token);
+    }
+    const fullUser: User = {
+      ...currentUser,
+      ...userData,
+      isOnline: true,
+      lastSeen: 'En línea'
+    };
+    setCurrentUser(fullUser);
+    localStorage.setItem('nakeic_user', JSON.stringify(fullUser));
+    realtime.disconnect();
+    realtime.connect(fullUser.id, token || localStorage.getItem('nakeic_auth_token') || undefined);
+    fetchInitialData(fullUser.id);
+  };
+
+  const logoutSession = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { ...getAuthHeaders() }
+      });
+    } catch (_) {}
+    localStorage.removeItem('nakeic_auth_token');
+    realtime.disconnect();
+  };
+
+  const dismissLiveToast = () => setLiveToastNotification(null);
+
   // Register or Switch User Real Profile
   const registerOrSwitchUser = async (userData: { phoneNumber: string; displayName: string; username?: string; bio?: string; avatarUrl?: string }) => {
     try {
@@ -226,6 +273,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
       const data = await res.json();
       if (data.user) {
+        if (data.token) {
+          localStorage.setItem('nakeic_auth_token', data.token);
+        }
         const fullUser: User = {
           ...data.user,
           lastSeen: 'En línea',
@@ -233,7 +283,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         };
         setCurrentUser(fullUser);
         localStorage.setItem('nakeic_user', JSON.stringify(fullUser));
-        realtime.connect(fullUser.id);
+        realtime.connect(fullUser.id, data.token);
         fetchInitialData(fullUser.id);
       }
     } catch (e) {
@@ -257,6 +307,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Initial Data Fetcher from Server
   const fetchInitialData = async (userId: string) => {
     try {
+      const authHeader = getAuthHeaders();
+
       // 1. Fetch Users / Contacts
       const usersRes = await fetch('/api/users');
       if (usersRes.ok) {
@@ -276,7 +328,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
       // 2. Fetch Conversations
-      const convsRes = await fetch(`/api/conversations?userId=${userId}`);
+      const convsRes = await fetch(`/api/conversations?userId=${userId}`, { headers: authHeader });
       if (convsRes.ok) {
         const convsList: any[] = await convsRes.json();
         if (convsList.length > 0) {
@@ -311,10 +363,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
       // 3. Fetch Statuses
-      const statusesRes = await fetch('/api/statuses');
+      const statusesRes = await fetch('/api/statuses', { headers: authHeader });
       if (statusesRes.ok) {
         const statusList: any[] = await statusesRes.json();
-        if (statusList.length > 0) {
+        if (Array.isArray(statusList)) {
           setStatuses(statusList.map(s => ({
             id: s.id,
             userId: s.userId,
@@ -324,8 +376,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             textCaption: s.textCaption,
             bgHex: s.bgHex || '#0077B6',
             timestamp: s.timestamp,
-            expiresAt: s.timestamp + 86400000,
-            isViewed: false
+            expiresAt: s.expiresAt || s.timestamp + 86400000,
+            privacy: s.privacy || 'everyone',
+            views: s.views || [],
+            reactions: s.reactions || [],
+            isViewed: Array.isArray(s.views) ? s.views.some((v: any) => v.userId === userId) : false
           })));
         }
       }
@@ -338,8 +393,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (!activeConversationId) return;
 
-    fetch(`/api/messages?conversationId=${activeConversationId}`)
-      .then(res => res.json())
+    fetch(`/api/messages?conversationId=${activeConversationId}`, {
+      headers: getAuthHeaders()
+    })
+      .then(res => res.ok ? res.json() : [])
       .then(serverMsgs => {
         if (Array.isArray(serverMsgs) && serverMsgs.length > 0) {
           const mapped: Message[] = serverMsgs.map(m => ({
@@ -392,16 +449,56 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   }, [activeConversationId, currentUser.id]);
 
+  const flushOfflineQueue = () => {
+    if (offlineQueueRef.current.length === 0) return;
+    const queued = [...offlineQueueRef.current];
+    offlineQueueRef.current = [];
+    queued.forEach(item => {
+      const msgId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      realtime.send('chat:send_message', {
+        id: msgId,
+        conversationId: item.conversationId,
+        senderId: currentUser.id,
+        text: item.text,
+        messageType: item.type,
+        mediaUrl: item.attachment?.mediaUrl,
+        fileName: item.attachment?.fileName,
+        fileSize: item.attachment?.fileSize,
+        durationSeconds: item.attachment?.durationSeconds,
+        waveform: item.attachment?.waveform,
+        location: item.attachment?.location,
+        contact: item.attachment?.contact,
+        poll: item.attachment?.poll,
+        productCard: item.attachment?.productCard,
+        isSilent: item.attachment?.isSilent,
+        isScheduled: item.attachment?.isScheduled,
+        scheduledTime: item.attachment?.scheduledTime,
+        replyToId: item.attachment?.replyTo?.id,
+        replyToText: item.attachment?.replyTo?.text
+      });
+    });
+  };
+
+  useEffect(() => {
+    if (!isOffline && isConnectedToServer) {
+      flushOfflineQueue();
+    }
+  }, [isOffline, isConnectedToServer]);
+
   // Connect WebSocket on user mount & register real-time event listeners
   useEffect(() => {
     if (!currentUser.id) return;
 
     realtime.connect(currentUser.id);
+    realtime.refreshIceServers();
     fetchInitialData(currentUser.id);
 
     // 1. Connection status
     const unsubConn = realtime.on('connection:change', data => {
       setIsConnectedToServer(data.isConnected);
+      if (data.isConnected && !isOffline) {
+        flushOfflineQueue();
+      }
     });
 
     // 2. Incoming real-time message
@@ -510,7 +607,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       );
     });
 
-    // 5. Ephemeral Story / Status update
+    // 5. Ephemeral Story / Status updates
     const unsubStatus = realtime.on('status:new', data => {
       const newStatus = data.status;
       if (newStatus) {
@@ -524,11 +621,62 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             textCaption: newStatus.textCaption,
             bgHex: newStatus.bgHex || '#0077B6',
             timestamp: newStatus.timestamp,
-            expiresAt: newStatus.timestamp + 86400000,
+            expiresAt: newStatus.expiresAt || newStatus.timestamp + 86400000,
+            privacy: newStatus.privacy || 'everyone',
+            views: newStatus.views || [],
+            reactions: newStatus.reactions || [],
             isViewed: false
           },
-          ...prev
+          ...prev.filter(s => s.id !== newStatus.id)
         ]);
+      }
+    });
+
+    const unsubStatusViewed = realtime.on('status:viewed', data => {
+      const sid = data?.statusId || data?.id;
+      if (!sid) return;
+      const mappedViews = Array.isArray(data.views)
+        ? data.views.map((v: any) => ({
+            userId: v.userId || v.viewerId,
+            userName: v.userName || v.viewerName,
+            viewedAt: v.viewedAt
+          }))
+        : undefined;
+      setStatuses(prev =>
+        prev.map(s =>
+          s.id === sid
+            ? {
+                ...s,
+                views: mappedViews || s.views,
+                isViewed: mappedViews ? mappedViews.some((v: any) => v.userId === currentUser.id) : s.isViewed
+              }
+            : s
+        )
+      );
+    });
+
+    const unsubStatusReacted = realtime.on('status:reacted', data => {
+      const sid = data?.statusId || data?.id;
+      if (!sid) return;
+      setStatuses(prev =>
+        prev.map(s => (s.id === sid ? { ...s, reactions: data.reactions || s.reactions } : s))
+      );
+    });
+
+    const unsubStatusDeleted = realtime.on('status:deleted', data => {
+      const sid = data?.statusId || data?.id;
+      if (!sid) return;
+      setStatuses(prev => prev.filter(s => s.id !== sid));
+    });
+
+    const unsubLiveNotification = realtime.on('live:creator_went_live', data => {
+      if (data?.roomId && data?.creatorId !== currentUser.id) {
+        setLiveToastNotification({
+          roomId: data.roomId,
+          creatorName: data.creatorName || 'Creador NAKEIC',
+          title: data.title || 'Transmisión en vivo',
+          category: data.category
+        });
       }
     });
 
@@ -564,29 +712,61 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } catch (e) {}
     });
 
-    // 7. WebRTC: Call Accepted by remote peer
+    // 7. WebRTC: Call Accepted by remote peer (move to connecting until ICE reaches connected)
     const unsubCallAccepted = realtime.on('webrtc:call_accepted', () => {
       setActiveCall(prev => ({
         ...prev,
-        status: 'connected',
-        durationSeconds: 0
+        status: prev.iceState === 'connected' || prev.iceState === 'completed' ? 'connected' : 'connecting'
       }));
+    });
 
-      // Start duration counter
-      if (callTimerRef.current) clearInterval(callTimerRef.current);
-      callTimerRef.current = setInterval(() => {
-        setActiveCall(p => ({ ...p, durationSeconds: p.durationSeconds + 1 }));
-      }, 1000);
+    // 7b. WebRTC: ICE connection state tracking
+    const unsubIceState = realtime.on('webrtc:ice_state', (data: { state: string }) => {
+      const state = data?.state as ActiveCallState['iceState'];
+      setActiveCall(prev => {
+        if (!prev.isActive) return prev;
+        if (state === 'connected' || state === 'completed') {
+          if (!callTimerRef.current) {
+            callTimerRef.current = setInterval(() => {
+              setActiveCall(p => ({ ...p, durationSeconds: p.durationSeconds + 1 }));
+            }, 1000);
+          }
+          return { ...prev, status: 'connected', iceState: state };
+        }
+        if (state === 'failed') {
+          return { ...prev, iceState: state, errorMessage: 'No se pudo establecer conexión P2P/TURN. Verifica tu red.' };
+        }
+        return { ...prev, iceState: state };
+      });
+    });
+
+    const unsubCallError = realtime.on('webrtc:call_error', (data: { message: string }) => {
+      setActiveCall(prev => ({
+        ...prev,
+        errorMessage: data?.message || 'Error en hardware de audio/video'
+      }));
     });
 
     // 8. WebRTC: Remote Stream track received
     const unsubRemoteStream = realtime.on('webrtc:remote_stream', data => {
       setRemoteStream(data.stream);
+      setActiveCall(prev => {
+        if (!prev.isActive) return prev;
+        if (!callTimerRef.current) {
+          callTimerRef.current = setInterval(() => {
+            setActiveCall(p => ({ ...p, durationSeconds: p.durationSeconds + 1 }));
+          }, 1000);
+        }
+        return { ...prev, status: 'connected' };
+      });
     });
 
     // 9. WebRTC: Call Ended
     const unsubCallEnded = realtime.on('webrtc:call_ended', () => {
-      if (callTimerRef.current) clearInterval(callTimerRef.current);
+      if (callTimerRef.current) {
+        clearInterval(callTimerRef.current);
+        callTimerRef.current = null;
+      }
       setLocalStream(null);
       setRemoteStream(null);
       setActiveCall(prev => ({
@@ -776,8 +956,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       unsubUser();
       unsubPresence();
       unsubStatus();
+      unsubStatusViewed();
+      unsubStatusReacted();
+      unsubStatusDeleted();
+      unsubLiveNotification();
       unsubIncomingCall();
       unsubCallAccepted();
+      unsubIceState();
+      unsubCallError();
       unsubRemoteStream();
       unsubCallEnded();
       unsubMsgDeleted();
@@ -908,7 +1094,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     fetch('/api/messages/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({
         conversationId,
         messageId,
@@ -963,7 +1149,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     fetch('/api/messages/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({
         conversationId,
         messageId,
@@ -999,7 +1185,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     fetch('/api/messages/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({
         conversationId,
         messageId,
@@ -1107,7 +1293,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       senderId: currentUser.id,
       senderName: currentUser.displayName,
       timestamp: Date.now(),
-      status: 'sent'
+      status: isOffline ? 'sending' : 'sent'
     };
     setMessages(prev => ({
       ...prev,
@@ -1118,6 +1304,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         c.id === targetConversationId ? { ...c, lastMessage: forwardedMsg } : c
       )
     );
+    if (isOffline) {
+      offlineQueueRef.current.push({
+        conversationId: targetConversationId,
+        text: message.text || '',
+        type: message.type,
+        attachment: {
+          mediaUrl: message.mediaUrl,
+          fileName: message.fileName,
+          fileSize: message.fileSize
+        }
+      });
+    } else {
+      realtime.send('chat:send_message', {
+        id: forwardedMsg.id,
+        conversationId: targetConversationId,
+        text: message.text || '',
+        messageType: message.type,
+        mediaUrl: message.mediaUrl,
+        fileName: message.fileName,
+        fileSize: message.fileSize
+      });
+    }
   };
 
   const toggleFollowChannel = (channelId: string) => {
@@ -1152,6 +1360,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setConversations(prev =>
       prev.map(c => (c.id === conversationId ? { ...c, disappearingSeconds: seconds } : c))
     );
+    fetch(`/api/conversations/${conversationId}/disappearing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ seconds })
+    }).catch(() => {});
   };
 
   // WhatsApp Conversation Actions (Archive, Pin, Mute, Mark Unread, Clear, Delete)
@@ -1333,7 +1546,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const res = await fetch('/api/conversations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
           creatorId: currentUser.id,
           type: 'direct',
@@ -1356,7 +1569,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const res = await fetch('/api/conversations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
           creatorId: currentUser.id,
           type: 'group',
@@ -1401,16 +1614,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       isFrontCamera: true,
       durationSeconds: 0,
       status: 'ringing',
+      iceState: 'checking',
       targetUserId: resolvedTargetId
     });
 
     if (resolvedTargetId) {
-      const stream = await realtime.startCall(
-        resolvedTargetId,
-        { id: currentUser.id, displayName: currentUser.displayName, avatarUrl: currentUser.avatarUrl },
-        isVideo
-      );
-      setLocalStream(stream);
+      try {
+        await realtime.refreshIceServers();
+        const stream = await realtime.startCall(
+          resolvedTargetId,
+          { id: currentUser.id, displayName: currentUser.displayName, avatarUrl: currentUser.avatarUrl },
+          isVideo
+        );
+        setLocalStream(stream);
+      } catch (err: any) {
+        setActiveCall(prev => ({
+          ...prev,
+          errorMessage: err?.message || 'Se requiere acceso real a micrófono/cámara.'
+        }));
+      }
     }
   };
 
@@ -1431,7 +1653,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       isCameraOff: false,
       isFrontCamera: true,
       durationSeconds: 0,
-      status: 'connected'
+      status: 'connecting',
+      iceState: 'checking'
     });
 
     // Notify group members
@@ -1440,54 +1663,69 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       user: { id: currentUser.id, name: currentUser.displayName, avatar: currentUser.avatarUrl }
     });
 
-    // Acquire local media
+    // Acquire local media honestly
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo });
       setLocalStream(stream);
-    } catch (e) {}
-
-    if (callTimerRef.current) clearInterval(callTimerRef.current);
-    callTimerRef.current = setInterval(() => {
-      setActiveCall(p => ({ ...p, durationSeconds: p.durationSeconds + 1 }));
-    }, 1000);
+      setActiveCall(prev => ({ ...prev, status: 'connected' }));
+      if (callTimerRef.current) clearInterval(callTimerRef.current);
+      callTimerRef.current = setInterval(() => {
+        setActiveCall(p => ({ ...p, durationSeconds: p.durationSeconds + 1 }));
+      }, 1000);
+    } catch (e: any) {
+      setActiveCall(prev => ({
+        ...prev,
+        errorMessage: e?.message || 'No se detectó micrófono/cámara o el permiso fue denegado.'
+      }));
+    }
   };
 
   const acceptCall = async () => {
     if (!activeCall.offerSdp || !activeCall.callerId) return;
 
-    const stream = await realtime.acceptIncomingCall({
-      callerId: activeCall.callerId,
-      offerSdp: activeCall.offerSdp,
-      isVideo: activeCall.isVideo
-    });
-    setLocalStream(stream);
-
     setActiveCall(prev => ({
       ...prev,
       isIncoming: false,
-      status: 'connected',
+      status: 'connecting',
+      iceState: 'checking',
       durationSeconds: 0
     }));
 
-    if (callTimerRef.current) clearInterval(callTimerRef.current);
-    callTimerRef.current = setInterval(() => {
-      setActiveCall(p => ({ ...p, durationSeconds: p.durationSeconds + 1 }));
-    }, 1000);
+    try {
+      await realtime.refreshIceServers();
+      const stream = await realtime.acceptIncomingCall({
+        callerId: activeCall.callerId,
+        offerSdp: activeCall.offerSdp,
+        isVideo: activeCall.isVideo
+      });
+      setLocalStream(stream);
+    } catch (err: any) {
+      setActiveCall(prev => ({
+        ...prev,
+        errorMessage: err?.message || 'No se pudo acceder al micrófono/cámara.'
+      }));
+    }
   };
 
   const rejectCall = () => {
     if (activeCall.callerId) {
       realtime.rejectCall(activeCall.callerId);
     }
-    if (callTimerRef.current) clearInterval(callTimerRef.current);
+    if (callTimerRef.current) {
+      clearInterval(callTimerRef.current);
+      callTimerRef.current = null;
+    }
     setLocalStream(null);
     setRemoteStream(null);
-    setActiveCall(prev => ({ ...prev, isActive: false, status: 'ended' }));
+    setActiveCall(prev => ({ ...prev, isActive: false, status: 'ended', errorMessage: undefined }));
   };
 
   const endCall = () => {
     realtime.endCall();
-    if (callTimerRef.current) clearInterval(callTimerRef.current);
+    if (callTimerRef.current) {
+      clearInterval(callTimerRef.current);
+      callTimerRef.current = null;
+    }
 
     // Save call record to history
     setCalls(prev => [
@@ -1506,7 +1744,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setLocalStream(null);
     setRemoteStream(null);
-    setActiveCall(prev => ({ ...prev, isActive: false, status: 'ended' }));
+    setActiveCall(prev => ({ ...prev, isActive: false, status: 'ended', errorMessage: undefined }));
   };
 
   const toggleMute = () => {
@@ -1537,18 +1775,96 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setActiveCall(prev => ({ ...prev, isFrontCamera: !prev.isFrontCamera }));
   };
 
-  // Real Ephemeral Story / Status creation
-  const addStatus = async (caption: string, mediaUrl?: string, bgHex?: string) => {
+  // Real Ephemeral Story / Status creation & interactions
+  const addStatus = async (
+    caption: string,
+    mediaUrl?: string,
+    bgHex?: string,
+    privacy: 'everyone' | 'contacts' | 'nobody' = 'everyone'
+  ) => {
+    try {
+      const res = await fetch('/api/statuses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({
+          textCaption: caption,
+          mediaUrl,
+          bgHex: bgHex || '#0077B6',
+          privacy
+        })
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setStatuses(prev => [
+          {
+            ...created,
+            expiresAt: created.expiresAt || created.timestamp + 86400000,
+            views: created.views || [],
+            reactions: created.reactions || [],
+            isViewed: true
+          },
+          ...prev.filter(s => s.id !== created.id)
+        ]);
+        return;
+      }
+    } catch (_) {}
+
     realtime.send('status:publish', {
       userId: currentUser.id,
       textCaption: caption,
       mediaUrl,
-      bgHex: bgHex || '#0077B6'
+      bgHex: bgHex || '#0077B6',
+      privacy
     });
   };
 
+  const viewStatus = async (statusId: string) => {
+    setStatuses(prev => prev.map(s => (s.id === statusId ? { ...s, isViewed: true } : s)));
+    try {
+      const res = await fetch(`/api/statuses/${statusId}/view`, {
+        method: 'POST',
+        headers: { ...getAuthHeaders() }
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        if (updated?.status) {
+          setStatuses(prev => prev.map(s => (s.id === statusId ? { ...s, views: updated.status.views || s.views, isViewed: true } : s)));
+        }
+      }
+    } catch (_) {}
+  };
+
+  const reactToStatus = async (statusId: string, emoji: string) => {
+    try {
+      const res = await fetch(`/api/statuses/${statusId}/react`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ emoji })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.status) {
+          setStatuses(prev => prev.map(s => (s.id === statusId ? { ...s, reactions: data.status.reactions } : s)));
+        }
+      }
+    } catch (_) {}
+  };
+
+  const deleteStatus = async (statusId: string) => {
+    setStatuses(prev => prev.filter(s => s.id !== statusId));
+    try {
+      await fetch(`/api/statuses/${statusId}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeaders() }
+      });
+    } catch (_) {}
+  };
+
+  const clearVoiceError = () => setVoiceError(null);
+
   // Real Voice Recording with MediaRecorder
   const startVoiceRecording = async () => {
+    setVoiceError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunksRef.current = [];
@@ -1579,15 +1895,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setRecordingDuration(prev => prev + 1);
         setRecordedWaveform(prev => [...prev.slice(1), Math.floor(Math.random() * 70) + 30]);
       }, 1000);
-    } catch (err) {
-      console.warn('Real microphone unavailable, using synthetic voice recorder fallback:', err);
-      setIsRecordingVoice(true);
-      setRecordingDuration(0);
-      setRecordedWaveform([40, 70, 50, 85, 60, 95]);
-      if (recordTimerRef.current) clearInterval(recordTimerRef.current);
-      recordTimerRef.current = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
-      }, 1000);
+    } catch (err: any) {
+      setVoiceError(err?.message || 'Permiso de micrófono requerido para grabar notas de voz.');
     }
   };
 
@@ -1665,8 +1974,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         presetThemes: PRESET_THEMES,
         currentUser,
         updateCurrentUser,
+        applyAuthenticatedSession,
+        logoutSession,
         registerOrSwitchUser,
         availableUsers,
+        liveToastNotification,
+        dismissLiveToast,
         activeTab,
         setActiveTab,
         activeConversationId,
@@ -1724,6 +2037,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         switchCamera,
         statuses,
         addStatus,
+        viewStatus,
+        reactToStatus,
+        deleteStatus,
         contacts,
         isOffline,
         setIsOffline,
@@ -1734,6 +2050,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         recordingDuration,
         recordedAudioBlob,
         recordedWaveform,
+        voiceError,
+        clearVoiceError,
         startVoiceRecording,
         pauseVoiceRecording,
         resumeVoiceRecording,

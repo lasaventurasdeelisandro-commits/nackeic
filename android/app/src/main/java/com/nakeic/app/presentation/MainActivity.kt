@@ -31,6 +31,9 @@ import com.nakeic.app.data.repository.ChatRepository
 import com.nakeic.app.domain.model.Conversation
 import com.nakeic.app.domain.model.Message
 import com.nakeic.app.domain.model.MessageType
+import com.nakeic.app.domain.model.WalletAccount
+import com.nakeic.app.live.NakeicLiveEngine
+import com.nakeic.app.ui.screens.LiveScreen
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -38,14 +41,16 @@ import javax.inject.Inject
 /**
  * MainActivity
  * Actividad principal de NAKEIC para Android 15.
- * Conectada al ChatRepository real (Room Database + Backend REST/WebSockets E2EE).
- * Cero datos simulados o listas fijas de demostración.
+ * Conectada al ChatRepository real (Room + Backend REST/WS) y NakeicLiveEngine (/ws/live).
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var chatRepository: ChatRepository
+
+    @Inject
+    lateinit var liveEngine: NakeicLiveEngine
 
     private val requiredPermissions = buildList {
         add(Manifest.permission.CAMERA)
@@ -57,13 +62,13 @@ class MainActivity : ComponentActivity() {
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) {
-        // Permisos procesados por el sistema
-    }
+    ) {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         checkAndRequestPermissions()
+
+        val initialLiveRoomId = intent?.getStringExtra("LIVE_ROOM_ID")
 
         setContent {
             NakeicTheme {
@@ -71,7 +76,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NakeicAppNavigation(chatRepository = chatRepository)
+                    NakeicAppNavigation(
+                        chatRepository = chatRepository,
+                        liveEngine = liveEngine,
+                        initialLiveRoomId = initialLiveRoomId
+                    )
                 }
             }
         }
@@ -89,6 +98,7 @@ class MainActivity : ComponentActivity() {
 
 enum class NavigationTab(val title: String) {
     CHATS("Chats"),
+    LIVE("En Vivo"),
     STATUS("Estados"),
     CALLS("Llamadas"),
     SETTINGS("Ajustes")
@@ -96,10 +106,20 @@ enum class NavigationTab(val title: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NakeicAppNavigation(chatRepository: ChatRepository) {
-    var selectedTab by remember { mutableStateOf(NavigationTab.CHATS) }
+fun NakeicAppNavigation(
+    chatRepository: ChatRepository,
+    liveEngine: NakeicLiveEngine,
+    initialLiveRoomId: String? = null
+) {
+    var selectedTab by remember {
+        mutableStateOf(if (!initialLiveRoomId.isNullOrBlank()) NavigationTab.LIVE else NavigationTab.CHATS)
+    }
     var activeConversation by remember { mutableStateOf<Conversation?>(null) }
     var isInActiveCall by remember { mutableStateOf(false) }
+
+    val currentUserId = chatRepository.getCurrentUserId() ?: ""
+    val currentUserName = chatRepository.getCurrentUserDisplayName()
+    val authToken = chatRepository.getAuthToken()
 
     if (isInActiveCall) {
         ActiveCallScreen(
@@ -111,6 +131,8 @@ fun NakeicAppNavigation(chatRepository: ChatRepository) {
         ChatDetailScreen(
             conversation = activeConversation!!,
             chatRepository = chatRepository,
+            currentUserId = currentUserId,
+            currentUserName = currentUserName,
             onBack = { activeConversation = null },
             onStartCall = { isInActiveCall = true }
         )
@@ -132,7 +154,7 @@ fun NakeicAppNavigation(chatRepository: ChatRepository) {
                                 color = MaterialTheme.colorScheme.primaryContainer
                             ) {
                                 Text(
-                                    "E2EE",
+                                    "E2EE · LIVE",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -142,11 +164,8 @@ fun NakeicAppNavigation(chatRepository: ChatRepository) {
                         }
                     },
                     actions = {
-                        IconButton(onClick = {}) {
-                            Icon(Icons.Default.CameraAlt, contentDescription = "Cámara")
-                        }
-                        IconButton(onClick = {}) {
-                            Icon(Icons.Default.Search, contentDescription = "Buscar")
+                        IconButton(onClick = { selectedTab = NavigationTab.LIVE }) {
+                            Icon(Icons.Default.LiveTv, contentDescription = "NAKEIC LIVE")
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -156,19 +175,20 @@ fun NakeicAppNavigation(chatRepository: ChatRepository) {
             },
             bottomBar = {
                 NavigationBar {
-                    NavigationTab.values().forEach { tab ->
+                    NavigationTab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = selectedTab == tab,
                             onClick = { selectedTab = tab },
                             icon = {
                                 when (tab) {
                                     NavigationTab.CHATS -> Icon(Icons.Default.Chat, contentDescription = tab.title)
+                                    NavigationTab.LIVE -> Icon(Icons.Default.LiveTv, contentDescription = tab.title)
                                     NavigationTab.STATUS -> Icon(Icons.Default.DonutLarge, contentDescription = tab.title)
                                     NavigationTab.CALLS -> Icon(Icons.Default.Phone, contentDescription = tab.title)
                                     NavigationTab.SETTINGS -> Icon(Icons.Default.Settings, contentDescription = tab.title)
                                 }
                             },
-                            label = { Text(tab.title) }
+                            label = { Text(tab.title, maxLines = 1, fontSize = 11.sp) }
                         )
                     }
                 }
@@ -180,9 +200,16 @@ fun NakeicAppNavigation(chatRepository: ChatRepository) {
                         chatRepository = chatRepository,
                         onSelectConversation = { activeConversation = it }
                     )
+                    NavigationTab.LIVE -> LiveScreen(
+                        liveEngine = liveEngine,
+                        currentUserId = currentUserId,
+                        currentUserName = currentUserName,
+                        authToken = authToken,
+                        initialRoomId = initialLiveRoomId
+                    )
                     NavigationTab.STATUS -> StatusListScreen()
                     NavigationTab.CALLS -> CallsHistoryScreen(onStartCall = { isInActiveCall = true })
-                    NavigationTab.SETTINGS -> SettingsScreen()
+                    NavigationTab.SETTINGS -> SettingsScreen(chatRepository = chatRepository)
                 }
             }
         }
@@ -194,7 +221,6 @@ fun ChatsListScreen(
     chatRepository: ChatRepository,
     onSelectConversation: (Conversation) -> Unit
 ) {
-    // Datos reales provenientes de Room Database y Backend REST (Cero listas de simulación)
     val conversations by chatRepository.getConversations().collectAsState(initial = emptyList())
 
     if (conversations.isEmpty()) {
@@ -210,13 +236,9 @@ fun ChatsListScreen(
                     tint = MaterialTheme.colorScheme.outline
                 )
                 Spacer(Modifier.height(12.dp))
+                Text("Sin conversaciones activas", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Text(
-                    "Sin conversaciones activas",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Text(
-                    "Tus chats con cifrado de extremo a extremo aparecerán aquí.",
+                    "Tus chats cifrados de extremo a extremo aparecerán aquí al iniciar sesión.",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -285,13 +307,14 @@ fun ChatsListScreen(
 fun ChatDetailScreen(
     conversation: Conversation,
     chatRepository: ChatRepository,
+    currentUserId: String,
+    currentUserName: String,
     onBack: () -> Unit,
     onStartCall: () -> Unit
 ) {
     var inputText by remember { mutableStateOf("") }
+    var sendError by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
-
-    // Historial real de mensajes reactivo desde Room Database
     val messages by chatRepository.getMessages(conversation.id).collectAsState(initial = emptyList())
 
     Scaffold(
@@ -300,7 +323,7 @@ fun ChatDetailScreen(
                 title = {
                     Column {
                         Text(conversation.title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Text("Cifrado E2EE activo · NAKEIC", fontSize = 11.sp, color = Color(0xFF10B981))
+                        Text("Cifrado E2EE (ECDH + Double Ratchet) · NAKEIC", fontSize = 11.sp, color = Color(0xFF10B981))
                     }
                 },
                 navigationIcon = {
@@ -320,47 +343,59 @@ fun ChatDetailScreen(
         },
         bottomBar = {
             Surface(tonalElevation = 3.dp) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.AttachFile, contentDescription = "Adjuntar")
+                Column {
+                    sendError?.let { err ->
+                        Text(
+                            err,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
                     }
-                    TextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Escribe un mensaje seguro...") },
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        shape = RoundedCornerShape(24.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(
-                        onClick = {
-                            if (inputText.isNotBlank()) {
-                                val textToSend = inputText.trim()
-                                inputText = ""
-                                val newMsg = Message(
-                                    id = "msg_${System.currentTimeMillis()}_${(1000..9999).random()}",
-                                    conversationId = conversation.id,
-                                    senderId = "user_me",
-                                    senderName = "Yo",
-                                    text = textToSend,
-                                    type = MessageType.TEXT
-                                )
-                                coroutineScope.launch {
-                                    chatRepository.sendMessage(newMsg)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextField(
+                            value = inputText,
+                            onValueChange = { inputText = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Escribe un mensaje seguro...") },
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            shape = RoundedCornerShape(24.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(
+                            onClick = {
+                                if (inputText.isNotBlank()) {
+                                    if (currentUserId.isBlank()) {
+                                        sendError = "Inicia sesión verificada antes de enviar mensajes."
+                                        return@IconButton
+                                    }
+                                    val textToSend = inputText.trim()
+                                    inputText = ""
+                                    sendError = null
+                                    val newMsg = Message(
+                                        id = "msg_${System.currentTimeMillis()}_${(1000..9999).random()}",
+                                        conversationId = conversation.id,
+                                        senderId = currentUserId,
+                                        senderName = currentUserName,
+                                        text = textToSend,
+                                        type = MessageType.TEXT
+                                    )
+                                    coroutineScope.launch {
+                                        chatRepository.sendMessage(newMsg).onFailure {
+                                            sendError = it.message
+                                        }
+                                    }
                                 }
                             }
+                        ) {
+                            Icon(Icons.Default.Send, contentDescription = "Enviar", tint = MaterialTheme.colorScheme.primary)
                         }
-                    ) {
-                        Icon(Icons.Default.Send, contentDescription = "Enviar", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -386,7 +421,7 @@ fun ChatDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(messages) { msg ->
-                    val isMe = msg.senderId == "user_me" || msg.senderId == "me"
+                    val isMe = currentUserId.isNotBlank() && msg.senderId == currentUserId
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
@@ -416,31 +451,24 @@ fun ActiveCallScreen(
     onEndCall: () -> Unit
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0F172A))
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().background(Color(0xFF0F172A)).padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF1E293B)),
+                modifier = Modifier.size(120.dp).clip(CircleShape).background(Color(0xFF1E293B)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(60.dp), tint = Color.White)
             }
             Spacer(Modifier.height(16.dp))
             Text(contactName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-            Text(if (isVideo) "Videollamada E2EE en curso" else "Llamada de voz cifrada", color = Color(0xFF10B981), fontSize = 14.sp)
-
+            Text(
+                if (isVideo) "Videollamada WebRTC en curso" else "Llamada de voz WebRTC",
+                color = Color(0xFF10B981),
+                fontSize = 14.sp
+            )
             Spacer(Modifier.height(48.dp))
-
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 IconButton(
                     onClick = {},
@@ -470,7 +498,7 @@ fun StatusListScreen() {
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text("Actualizaciones de Estado (24h)", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Spacer(Modifier.height(8.dp))
-        Text("Tus estados compartidos tienen cifrado de extremo a extremo.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Tus estados sincronizan vistas, privacidad y reacciones con el backend.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -486,14 +514,31 @@ fun CallsHistoryScreen(onStartCall: () -> Unit) {
 }
 
 @Composable
-fun SettingsScreen() {
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Ajustes de NAKEIC", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        Spacer(Modifier.height(16.dp))
-        Text("• Cuenta y Verificación de Identidad", fontSize = 14.sp)
-        Spacer(Modifier.height(8.dp))
-        Text("• Cifrado de extremo a extremo (Double Ratchet)", fontSize = 14.sp)
-        Spacer(Modifier.height(8.dp))
-        Text("• Notificaciones Push y Almacenamiento Seguro", fontSize = 14.sp)
+fun SettingsScreen(chatRepository: ChatRepository) {
+    var wallet by remember { mutableStateOf<WalletAccount?>(null) }
+    val token = chatRepository.getAuthToken()
+
+    LaunchedEffect(token) {
+        if (!token.isNullOrBlank()) {
+            chatRepository.getWalletBalance().onSuccess { wallet = it }
+        }
+    }
+
+    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Ajustes y Billetera NAKEIC", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = if (token.isNullOrBlank()) "Sesión: No autenticada" else "Sesión verificada: ${chatRepository.getCurrentUserDisplayName()}",
+                    fontWeight = FontWeight.Bold
+                )
+                wallet?.let { w ->
+                    Text("NAKEIC Coins: ${w.coinsBalance} · Diamantes: ${w.creatorDiamonds} · KYC: ${w.kycStatus}", fontSize = 13.sp)
+                }
+            }
+        }
+        Text("• Verificación OTP + Contraseña scrypt", fontSize = 14.sp)
+        Text("• Cifrado E2EE (ECDH P-256 + HKDF + Double Ratchet AES-256-GCM)", fontSize = 14.sp)
+        Text("• NAKEIC LIVE (Co-Hosts WebRTC, Batallas PK y Monetización)", fontSize = 14.sp)
     }
 }

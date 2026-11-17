@@ -8,9 +8,11 @@ export type RealtimeEventHandler = (data: any) => void;
 class RealtimeService {
   private ws: WebSocket | null = null;
   private currentUserId: string | null = null;
+  private currentToken: string | null = null;
   private eventHandlers: Map<string, Set<RealtimeEventHandler>> = new Map();
   private reconnectTimeout: any = null;
-  private isConnected: boolean = false;
+  private reconnectAttempts: number = 0;
+  private pendingQueue: Array<{ type: string; data: any }> = [];
 
   // WebRTC state
   private peerConnection: RTCPeerConnection | null = null;
@@ -26,10 +28,42 @@ class RealtimeService {
     // initialize
   }
 
-  public connect(userId: string) {
+  public async refreshIceServers(): Promise<RTCIceServer[]> {
+    try {
+      const res = await fetch('/api/webrtc/config');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.iceServers) && data.iceServers.length > 0) {
+          this.iceServers = data.iceServers;
+        }
+        this.emit('webrtc:ice_config_status', {
+          turnConfigured: Boolean(data.turnConfigured),
+          guidance: data.guidance
+        });
+      }
+    } catch {
+      // Keep default STUN list if endpoint unreachable
+    }
+    return this.iceServers;
+  }
+
+  public connect(userId: string, token?: string) {
     this.currentUserId = userId;
+    if (token) {
+      this.currentToken = token;
+      try { localStorage.setItem('nakeic_auth_token', token); } catch (e) { /* ignore */ }
+    } else {
+      try {
+        this.currentToken = localStorage.getItem('nakeic_auth_token') || '';
+      } catch (e) {
+        this.currentToken = '';
+      }
+    }
+
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
-      this.send('auth:connect', { userId });
+      if (this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type: 'auth:connect', data: { userId, token: this.currentToken } }));
+      }
       return;
     }
 
@@ -40,8 +74,11 @@ class RealtimeService {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        this.isConnected = true;
-        this.send('auth:connect', { userId: this.currentUserId });
+        this.reconnectAttempts = 0;
+        this.ws?.send(JSON.stringify({
+          type: 'auth:connect',
+          data: { userId: this.currentUserId, token: this.currentToken }
+        }));
         this.emit('connection:change', { isConnected: true });
       };
 
@@ -49,9 +86,18 @@ class RealtimeService {
         try {
           const payload = JSON.parse(event.data);
           const { type, data } = payload;
-          this.emit(type, data);
 
-          // Handle incoming WebRTC signaling automatically
+          if (type === 'auth:ack') {
+            // Flush queued messages only after server confirms authenticated WebSocket session
+            while (this.pendingQueue.length > 0 && this.ws?.readyState === WebSocket.OPEN) {
+              const queued = this.pendingQueue.shift();
+              if (queued) {
+                this.ws.send(JSON.stringify(queued));
+              }
+            }
+          }
+
+          this.emit(type, data);
           this.handleInternalWebRTCSignal(type, data);
         } catch (e) {
           console.error('[NAKEIC WS] Error parsing message:', e);
@@ -59,15 +105,15 @@ class RealtimeService {
       };
 
       this.ws.onclose = () => {
-        this.isConnected = false;
         this.emit('connection:change', { isConnected: false });
-        // Attempt reconnect after 3 seconds
         clearTimeout(this.reconnectTimeout);
+        const delayMs = Math.min(15000, 1500 * Math.pow(1.5, this.reconnectAttempts));
+        this.reconnectAttempts++;
         this.reconnectTimeout = setTimeout(() => {
           if (this.currentUserId) {
-            this.connect(this.currentUserId);
+            this.connect(this.currentUserId, this.currentToken || undefined);
           }
-        }, 3000);
+        }, delayMs);
       };
 
       this.ws.onerror = (err) => {
@@ -81,6 +127,11 @@ class RealtimeService {
   public send(type: string, data: any) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type, data }));
+    } else if (type !== 'auth:connect') {
+      this.pendingQueue.push({ type, data });
+      if (this.pendingQueue.length > 100) {
+        this.pendingQueue.shift();
+      }
     }
   }
 
@@ -116,38 +167,9 @@ class RealtimeService {
     this.endCall();
   }
 
-  // --- Real WebRTC Implementation ---
+  private attachPeerConnectionObservers(targetUserId: string) {
+    if (!this.peerConnection) return;
 
-  public async startCall(targetUserId: string, caller: { id: string; displayName: string; avatarUrl: string }, isVideo: boolean): Promise<MediaStream | null> {
-    this.currentCallTargetUserId = targetUserId;
-
-    try {
-      // 1. Get real user media (mic & camera)
-      this.localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false
-      });
-    } catch (err) {
-      console.warn('[NAKEIC WebRTC] Could not acquire hardware media, proceeding in fallback mode:', err);
-      // Create empty fallback audio stream so call can still proceed
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const dst = ctx.createMediaStreamDestination();
-      osc.connect(dst);
-      this.localStream = dst.stream;
-    }
-
-    // 2. Initialize PeerConnection
-    this.peerConnection = new RTCPeerConnection({ iceServers: this.iceServers });
-
-    // 3. Add local tracks
-    if (this.localStream) {
-      this.localStream.getTracks().forEach(track => {
-        this.peerConnection?.addTrack(track, this.localStream!);
-      });
-    }
-
-    // 4. Handle ICE candidates
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         this.send('webrtc:ice_candidate', {
@@ -157,16 +179,58 @@ class RealtimeService {
       }
     };
 
-    // 5. Handle remote stream tracks
-    this.remoteStream = new MediaStream();
-    this.peerConnection.ontrack = (event) => {
-      event.streams[0].getTracks().forEach(track => {
-        this.remoteStream?.addTrack(track);
-      });
-      this.emit('webrtc:remote_stream', { stream: this.remoteStream });
+    this.peerConnection.oniceconnectionstatechange = () => {
+      const state = this.peerConnection?.iceConnectionState || 'new';
+      this.emit('webrtc:ice_state', { state });
+      if (state === 'failed') {
+        this.emit('webrtc:call_error', {
+          error: 'No se pudo establecer la ruta de audio/video WebRTC (verifique servidor TURN en redes con NAT simétrico).'
+        });
+      }
     };
 
-    // 6. Create Offer & Send via WebSocket
+    this.remoteStream = new MediaStream();
+    this.peerConnection.ontrack = (event) => {
+      const incoming = event.streams?.[0];
+      if (incoming) {
+        incoming.getTracks().forEach(track => this.remoteStream?.addTrack(track));
+      } else if (event.track) {
+        this.remoteStream?.addTrack(event.track);
+      }
+      this.emit('webrtc:remote_stream', { stream: this.remoteStream });
+    };
+  }
+
+  // --- Real WebRTC Implementation (No synthetic media faking) ---
+
+  public async startCall(targetUserId: string, caller: { id: string; displayName: string; avatarUrl: string }, isVideo: boolean): Promise<MediaStream> {
+    this.currentCallTargetUserId = targetUserId;
+    await this.refreshIceServers();
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('Este navegador o dispositivo no soporta captura WebRTC de micrófono/cámara.');
+    }
+
+    try {
+      this.localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false
+      });
+    } catch (err: any) {
+      this.currentCallTargetUserId = null;
+      throw new Error(
+        isVideo
+          ? 'Permiso de cámara o micrófono denegado/no disponible para videollamada.'
+          : 'Permiso de micrófono denegado o no disponible para llamada de voz.'
+      );
+    }
+
+    this.peerConnection = new RTCPeerConnection({ iceServers: this.iceServers });
+    this.localStream.getTracks().forEach(track => {
+      this.peerConnection?.addTrack(track, this.localStream!);
+    });
+    this.attachPeerConnectionObservers(targetUserId);
+
     const offer = await this.peerConnection.createOffer();
     await this.peerConnection.setLocalDescription(offer);
 
@@ -182,45 +246,29 @@ class RealtimeService {
     return this.localStream;
   }
 
-  public async acceptIncomingCall(callData: { callerId: string; offerSdp: any; isVideo: boolean }): Promise<MediaStream | null> {
+  public async acceptIncomingCall(callData: { callerId: string; offerSdp: any; isVideo: boolean }): Promise<MediaStream> {
     this.currentCallTargetUserId = callData.callerId;
+    await this.refreshIceServers();
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('Este dispositivo no soporta captura WebRTC.');
+    }
 
     try {
       this.localStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: callData.isVideo ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false
       });
-    } catch (err) {
-      console.warn('[NAKEIC WebRTC] Media acquisition notice:', err);
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const dst = ctx.createMediaStreamDestination();
-      this.localStream = dst.stream;
+    } catch {
+      this.currentCallTargetUserId = null;
+      throw new Error('Debes autorizar el micrófono/cámara para contestar la llamada.');
     }
 
     this.peerConnection = new RTCPeerConnection({ iceServers: this.iceServers });
-
-    if (this.localStream) {
-      this.localStream.getTracks().forEach(track => {
-        this.peerConnection?.addTrack(track, this.localStream!);
-      });
-    }
-
-    this.peerConnection.onicecandidate = (event) => {
-      if (event.candidate) {
-        this.send('webrtc:ice_candidate', {
-          targetUserId: callData.callerId,
-          candidate: event.candidate
-        });
-      }
-    };
-
-    this.remoteStream = new MediaStream();
-    this.peerConnection.ontrack = (event) => {
-      event.streams[0].getTracks().forEach(track => {
-        this.remoteStream?.addTrack(track);
-      });
-      this.emit('webrtc:remote_stream', { stream: this.remoteStream });
-    };
+    this.localStream.getTracks().forEach(track => {
+      this.peerConnection?.addTrack(track, this.localStream!);
+    });
+    this.attachPeerConnectionObservers(callData.callerId);
 
     if (callData.offerSdp) {
       await this.peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offerSdp));
