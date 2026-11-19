@@ -1,15 +1,15 @@
 {
+  "short_name": "Diclik.com",
+  "name": "Diclik.com - Un clic, miles de soluciones",
   "id": "/",
-  "name": "NAKEIC - Conecta Sin Límites",
-  "short_name": "NAKEIC",
-  "description": "Mensajería privada nativa con llamadas WebRTC, estados temporales y cifrado E2EE.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#0B132B",
-  "background_color": "#0B132B",
-  "categories": ["communication", "social"],
+  "background_color": "#001247",
+  "theme_color": "#001247",
+  "description": "Un clic, miles de soluciones. Contratación directa de técnicos y profesionales con radar satelital, cotización y pagos Escrow seguros.",
+  "categories": ["business", "utilities", "lifestyle"],
   "icons": [
     {
       "src": "/pwa-192x192.png",
@@ -24,16 +24,10 @@
       "purpose": "any"
     },
     {
-      "src": "/pwa-maskable-512x512.png",
+      "src": "/assets/brand/diclik-icon-simple.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    },
-    {
-      "src": "/nakeic_logo.jpg",
-      "sizes": "1024x1024",
-      "type": "image/jpeg",
-      "purpose": "any"
     }
   ]
 }

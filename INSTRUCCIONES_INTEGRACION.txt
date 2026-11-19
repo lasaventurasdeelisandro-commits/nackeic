@@ -1,0 +1,9 @@
+DICLIK — PANTALLA DE INICIO APROBADA
+
+Archivos modificados:
+- src/App.tsx: portada con logo original, marca de agua y selección de Cliente / Profesional / Técnico.
+- public/assets/brand/diclik-official-watermark.png: imagen oficial suministrada por el propietario.
+
+La selección de rol es navegación visual; la autorización debe verificarse en el servidor.
+No se han ejecutado compilaciones ni pruebas de extremo a extremo.
+Para integrar el parche, copiar los archivos sobre las mismas rutas del proyecto y compilar.

@@ -1,0 +1,63 @@
+================================================================================
+                    DIRECTO — PAQUETE COMPLETO PARA MEMORIA USB
+================================================================================
+
+Este paquete contiene todo el código fuente, configuración, activos y guías de la
+plataforma DIRECTO para que la lleves en tu memoria USB (Pendrive).
+
+--------------------------------------------------------------------------------
+1. ¿CÓMO COPIAR ESTE ARCHIVO A TU MEMORIA USB?
+--------------------------------------------------------------------------------
+1. Conecta tu memoria USB en cualquier puerto USB de tu computadora.
+2. Abre la carpeta "Descargas" (Downloads) de tu computadora.
+3. Busca el archivo "directo-proyecto-completo.zip".
+4. Haz clic derecho sobre el archivo -> "Copiar" (o presiona Ctrl + C).
+5. Abre la ventana de tu memoria USB en el Explorador de Archivos.
+6. Haz clic derecho en un espacio vacío -> "Pegar" (o presiona Ctrl + V).
+7. (Opcional): Si deseas ver los archivos dentro de la USB, haz clic derecho sobre
+   el archivo zip en la USB y selecciona "Extraer aquí" o "Extraer todo".
+
+--------------------------------------------------------------------------------
+2. ¿CÓMO ABRIR Y EJECUTAR LA APLICACIÓN EN OTRA COMPUTADORA DESDE LA USB?
+--------------------------------------------------------------------------------
+Requisitos en la computadora donde la vayas a usar:
+- Tener instalado Node.js (descárgalo gratis en https://nodejs.org).
+
+Pasos:
+1. Conecta la USB a la computadora.
+2. Abre la carpeta donde extrajiste el proyecto.
+3. Abre una terminal (CMD en Windows, PowerShell o Terminal en Mac/Linux).
+4. Escribe el comando:
+      npm install
+5. Luego escribe el comando:
+      npm run dev
+6. Abre tu navegador web en: http://localhost:3000
+   ¡La aplicación DIRECTO estará funcionando inmediatamente!
+
+--------------------------------------------------------------------------------
+3. ¿CÓMO GENERAR EL ARCHIVO INSTALABLE .APK PARA TU CELULAR ANDROID?
+--------------------------------------------------------------------------------
+Tienes dos formas muy sencillas detalladas en el archivo GUIA_COMPILAR_APK.md:
+
+MÉTODO A (Con Capacitor y Android Studio):
+1. Instala Android Studio en tu PC.
+2. En la terminal dentro de la carpeta del proyecto ejecuta:
+      npm install
+      npm install @capacitor/core @capacitor/cli @capacitor/android
+      npm run build
+      npx cap add android
+      npx cap open android
+3. En Android Studio ve al menú: Build > Build Bundle(s) / APK(s) > Build APK(s).
+4. Copia el archivo .apk resultante en tu memoria USB o envíalo a tu celular para instalarlo.
+
+MÉTODO B (Instalación instantánea como PWA en tu celular):
+1. Abre el navegador Google Chrome en tu celular.
+2. Entra al enlace de la aplicación:
+   https://ais-pre-q45zv5zx55agw2ciocdaoy-621986280959.us-east1.run.app
+3. Toca los tres puntos arriba a la derecha en Chrome y presiona:
+   "Agregar a la pantalla principal" o "Instalar aplicación".
+4. Se instalará el icono nativo de DIRECTO en tu celular con acceso directo sin cables.
+
+--------------------------------------------------------------------------------
+¡Gracias por usar DIRECTO!
+================================================================================
